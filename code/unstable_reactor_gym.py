@@ -162,7 +162,19 @@ class UnstableReactor(gym.Env):
         self.state.extend(stacks)
         self.state = np.array(self.state)
 
-        reward = self.state[1]
+        cooling_reward = -action
+        conc_a_reward = None
+        temp_reward = None
+        if new_CA < 0.2:
+            conc_a_reward = 0
+        else:
+            conc_a_reward = 0.2-new_CA
+        if new_T < 400:
+            temp_reward = 0
+        else:
+            temp_reward = 400-new_T
+
+        reward = cooling_reward+conc_a_reward+temp_reward
 
         self.current_step += 1
 
