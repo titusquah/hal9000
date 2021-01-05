@@ -3,7 +3,7 @@ from unstable_reactor_gym import UnstableReactor
 from stable_baselines.common.policies import MlpLnLstmPolicy,\
     LstmPolicy,\
     MlpPolicy
-from stable_baselines.common.vec_env import SubprocVecEnv, VecNormalize
+from stable_baselines.common.vec_env import SubprocVecEnv, VecNormalize, DummyVecEnv
 from stable_baselines import PPO2
 import os
 
@@ -57,7 +57,7 @@ def main():
 
         n_cpu = ncpu
 
-        env = SubprocVecEnv([UnstableReactor(dt=dt) for i
+        env = DummyVecEnv([lambda: UnstableReactor(dt=dt) for i
                              in range(n_cpu)])
         env = VecNormalize(env, norm_obs=True, norm_reward=True,
                            clip_obs=10.)
@@ -81,12 +81,11 @@ def main():
                     env.save(log_dir)
 
                 except Exception as e:
-                    raise (e)
+                    raise(e)
 
             else:
-                model = PPO2(MlpLnLstmPolicy, env, verbose=0,
-                             nminibatches=n_cpu, learning_rate=0.00025,
-                             n_steps=nstep)
+                model = PPO2(MlpLnLstmPolicy, env, verbose=1,
+                             nminibatches=n_cpu, n_steps=nstep)
                 model.learn(total_timesteps=int(time_steps))
 
 

@@ -14,7 +14,8 @@ class UnstableReactor(gym.Env):
     }
 
     def __init__(self,
-                 initial_jacket_temp=280,
+                 initial_jacket_temp_min=280,
+                 initial_jacket_temp_max=280,
                  feed_temp=350,
                  feed_conc=1,
                  feed_flowrate=100,
@@ -25,15 +26,18 @@ class UnstableReactor(gym.Env):
                  e_over_r=8750,
                  preexp_factor=7.2e10,
                  ua=5e4,
-                 initial_tank_conc=1,
-                 initial_tank_temp=304,
+                 initial_tank_conc_min=1,
+                 initial_tank_conc_max=1,
+                 initial_tank_temp_min=304,
+                 initial_tank_temp_max=304,
                  dt=1,
                  max_jacket_temp=350,
                  min_jacket_temp=250,
                  n_look_back=0,
                  max_time=500
                  ):
-        self.initial_jacket_temp = initial_jacket_temp  # K
+        self.initial_jacket_temp_min = initial_jacket_temp_min  # K
+        self.initial_jacket_temp_max = initial_jacket_temp_max  # K
         self.feed_temp = feed_temp  # K
         self.feed_conc = feed_conc  # mol/m^3
         self.feed_flowrate = feed_flowrate  # m^3/sec
@@ -44,8 +48,10 @@ class UnstableReactor(gym.Env):
         self.e_over_r = e_over_r  # K
         self.preexp_factor = preexp_factor  # 1/sec
         self.ua = ua  # W/K
-        self.initial_tank_conc = initial_tank_conc  # mol/m^3
-        self.initial_tank_temp = initial_tank_temp  # K
+        self.initial_tank_conc_min = initial_tank_conc_min  # mol/m^3
+        self.initial_tank_temp_min = initial_tank_temp_min  # K
+        self.initial_tank_conc_max = initial_tank_conc_max  # mol/m^3
+        self.initial_tank_temp_max = initial_tank_temp_max  # K
 
         self.dt = dt
         self.jacket_temp_max = max_jacket_temp  # K
@@ -59,9 +65,9 @@ class UnstableReactor(gym.Env):
 
         inf = np.finfo(np.float32).max
 
-        # C_a, C_b, Temp
-        high_set = [inf, inf, 6e6]
-        low_set = [0, 0, 0]
+        # C_a, Temp
+        high_set = [inf, 6e6]
+        low_set = [0, 0]
         high = []
         low = []
         for i in range(self.n_look_back + 1):
@@ -96,8 +102,8 @@ class UnstableReactor(gym.Env):
         """
         jacket_temp = action
         tank_conc_a = state[0]
-        tank_conc_b = state[1]
-        tank_temp = state[2]
+        # tank_conc_b = state[1]
+        tank_temp = state[1]
         feed_flowrate = self.feed_flowrate
         tank_vol = self.tank_vol  # m^3
         rho = self.rho  # kg/m^3
@@ -111,22 +117,22 @@ class UnstableReactor(gym.Env):
 
         dconc_a_dt = feed_flowrate / tank_vol * (
                 feed_conc - tank_conc_a) - react_rate
-        dconc_b_dt = feed_flowrate / tank_vol * (
-                0 - tank_conc_b) + react_rate
+        # dconc_b_dt = feed_flowrate / tank_vol * (
+        #         0 - tank_conc_b) + react_rate
         dtemp_dt = feed_flowrate / tank_vol * (feed_temp - tank_temp) \
                    + dh / (rho * cp) * react_rate \
                    + ua / tank_vol / rho / cp * (jacket_temp - tank_temp)
 
-        new_state = np.zeros(3)
+        new_state = np.zeros(2)
         new_state[0] = dconc_a_dt
-        new_state[1] = dconc_b_dt
-        new_state[2] = dtemp_dt
+        # new_state[1] = dconc_b_dt
+        new_state[1] = dtemp_dt
         return new_state
 
     def reset(self):
         self.current_step = 0
-        high_set = [self.initial_tank_conc, 0, self.initial_tank_temp]
-        low_set = [self.initial_tank_conc, 0, self.initial_tank_temp]
+        high_set = [self.initial_tank_conc_max, self.initial_tank_temp_max]
+        low_set = [self.initial_tank_conc_min, self.initial_tank_temp_min]
         high = []
         low = []
         for i in range(self.n_look_back + 1):
@@ -143,22 +149,20 @@ class UnstableReactor(gym.Env):
         :param action:(np.ndarray)
         :return:
         """
-        tank_conc_a, tank_conc_b, tank_temp = self.state[0:3]
+        tank_conc_a, tank_temp = self.state[0:2]
         action = np.clip(action, 0, 1)
-        jacket_temp = self.jacket_temp_min + self.jacket_temp_range * action
+        jacket_temp = self.jacket_temp_min + self.jacket_temp_range * action[0]
         inputs = tuple([jacket_temp, self.feed_temp, self.feed_conc])
         time = [0, self.dt]
-        new_CA, new_CB, new_T = \
-            odeint(self.cstr_step, self.state[0:3], time, inputs)[-1]
+        new_CA, new_T = \
+            odeint(self.cstr_step, self.state[0:2], time, inputs)[-1]
         if new_CA < 0:
             new_CA = 0
-        if new_CB < 0:
-            new_CB = 0
         if new_T < 0:
             new_T = 0
 
-        stacks = self.state[0:-3]
-        self.state = [new_CA, new_CB, new_T]
+        stacks = self.state[0:-2]
+        self.state = [new_CA, new_T]
         self.state.extend(stacks)
         self.state = np.array(self.state)
 
