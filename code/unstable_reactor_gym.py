@@ -34,7 +34,11 @@ class UnstableReactor(gym.Env):
                  max_jacket_temp=350,
                  min_jacket_temp=250,
                  n_look_back=0,
-                 max_time=500
+                 max_time=500,
+                 hold_time=5,
+                 tank_temp_ub=400,
+                 tank_conc_ub=0.2,
+                 rel_diff_for_main_reset=1e-4,
                  ):
         self.initial_jacket_temp_min = initial_jacket_temp_min  # K
         self.initial_jacket_temp_max = initial_jacket_temp_max  # K
@@ -59,15 +63,24 @@ class UnstableReactor(gym.Env):
         self.jacket_temp_range = max_jacket_temp - min_jacket_temp  # K
         self.n_look_back = n_look_back
         self.max_time = max_time
+        self.hold_time = hold_time
+        self.tank_temp_ub = tank_temp_ub
+        self.tank_conc_ub = tank_conc_ub
+        self.rel_diff_for_main_reset = rel_diff_for_main_reset
 
         self.np_random = None
         self.state = None
+        self.main_reset = True
+        self.last_tank_conc = None
+        self.last_tank_temp = None
+        self.tank_conc_stable_counter = 0
+        self.tank_temp_stable_counter = 0
 
         inf = np.finfo(np.float32).max
 
-        # C_a, Temp
-        high_set = [inf, 6e6]
-        low_set = [0, 0]
+        # C_a, Temp, mini_time
+        high_set = [inf, 6e6, self.max_time]
+        low_set = [0, 0, 0]
         high = []
         low = []
         for i in range(self.n_look_back + 1):
@@ -131,8 +144,17 @@ class UnstableReactor(gym.Env):
 
     def reset(self):
         self.current_step = 0
-        high_set = [self.initial_tank_conc_max, self.initial_tank_temp_max]
-        low_set = [self.initial_tank_conc_min, self.initial_tank_temp_min]
+        zero = np.float64(0)
+        if self.main_reset:
+            high_set = [self.initial_tank_conc_max,
+                        self.initial_tank_temp_max, zero]
+            low_set = [self.initial_tank_conc_min,
+                       self.initial_tank_temp_min, zero]
+        else:
+            high_set = [self.last_tank_conc,
+                        self.last_tank_temp, zero]
+            low_set = [self.last_tank_conc,
+                       self.last_tank_temp, zero]
         high = []
         low = []
         for i in range(self.n_look_back + 1):
@@ -149,7 +171,7 @@ class UnstableReactor(gym.Env):
         :param action:(np.ndarray)
         :return:
         """
-        tank_conc_a, tank_temp = self.state[0:2]
+        tank_conc_a, tank_temp, mini_time = self.state[0:3]
         action = np.clip(action, 0, 1)
         jacket_temp = self.jacket_temp_min + self.jacket_temp_range * action[0]
         inputs = tuple([jacket_temp, self.feed_temp, self.feed_conc])
@@ -160,24 +182,46 @@ class UnstableReactor(gym.Env):
             new_CA = 0
         if new_T < 0:
             new_T = 0
+        new_mini_time = self.current_step + 1
 
-        stacks = self.state[0:-2]
-        self.state = [new_CA, new_T]
+        stacks = self.state[0:-3]
+        self.state = [new_CA, new_T, new_mini_time]
         self.state.extend(stacks)
         self.state = np.array(self.state)
 
         cooling_reward = -action
+        if mini_time == 1:
+            self.last_tank_conc = tank_conc_a
+            self.last_tank_temp = tank_temp
+            conc_diff = np.abs(tank_conc_a-new_CA)
+            temp_diff = np.abs(tank_temp - new_T)
+            conc_tol = new_CA*self.rel_diff_for_main_reset
+            temp_tol = new_T * self.rel_diff_for_main_reset
+            if new_CA < self.tank_conc_ub:
+                if conc_diff < conc_tol:
+                    self.tank_conc_stable_counter += 1
+                else:
+                    self.tank_conc_stable_counter = 0
+                if temp_diff < temp_tol:
+                    self.tank_temp_stable_counter += 1
+                else:
+                    self.tank_temp_stable_counter = 0
+            if (self.tank_temp_stable_counter >= self.hold_time
+                    or self.tank_conc_stable_counter >= self.hold_time):
+                self.main_reset = True
+            else:
+                self.main_reset = False
 
-        if new_CA < 0.2:
+        if new_CA < self.tank_conc_ub:
             conc_a_reward = 0
         else:
-            conc_a_reward = 0.2-new_CA
-        if new_T < 400:
+            conc_a_reward = self.tank_conc_ub - new_CA
+        if new_T < self.tank_temp_ub:
             temp_reward = 0
         else:
-            temp_reward = 400-new_T
+            temp_reward = self.tank_temp_ub - new_T
 
-        reward = 0*cooling_reward + 10*conc_a_reward+temp_reward
+        reward = 0 * cooling_reward + 10 * conc_a_reward + temp_reward
 
         self.current_step += 1
 
