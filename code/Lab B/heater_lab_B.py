@@ -125,7 +125,7 @@ try:
 except KeyboardInterrupt:
     # Disconnect from Arduino
     a.Q1(0)
-    a.Q2(0)
+    a.Q2(0)ti
     a.LED(0)
     print('Shutting down')
     a.close()
