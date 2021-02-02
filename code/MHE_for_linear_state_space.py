@@ -45,6 +45,7 @@ U_est = 10 * np.ones(nt)
 tau_est = 5 * np.ones(nt)
 est_a1 = 0.01 * np.ones(nt)
 est_a2 = 0.0075 * np.ones(nt)
+print('hi')
 
 m = GEKKO()
 m.time = np.linspace(0, 60, 21)
