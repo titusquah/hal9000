@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.integrate import odeint
-
+import pandas as pd
 from collections import OrderedDict
 from gym import spaces
 from gym.utils import seeding
 import gym
 
 
-class FanTempControlLab(gym.Env):
+class FanTempControlLabGrayBox(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 30
@@ -19,79 +19,66 @@ class FanTempControlLab(gym.Env):
                  cp=500,
                  surf_area=1.2e-3,
                  mass=.004,
-                 overall_heat_transfer_coeff=10,
-                 emissivity=0.9
-                 feed_conc=1,
-                 feed_flowrate=100,
-                 tank_vol=100,
-                 rho=1000,
-                 cp=0.239,
-                 dh=5e4,
-                 e_over_r=8750,
-                 preexp_factor=7.2e10,
-                 ua=5e4,
-                 initial_tank_conc_min=1,
-                 initial_tank_conc_max=1,
-                 initial_tank_temp_min=304,
-                 initial_tank_temp_max=304,
-                 dt=1,
-                 max_jacket_temp=350,
-                 min_jacket_temp=250,
-                 n_look_back=0,
-                 max_time=500,
-                 hold_time=5,
-                 tank_temp_ub=400,
-                 tank_conc_ub=0.2,
-                 rel_diff_for_main_reset=1e-4,
+                 emissivity=0.9,
+                 dt=0.1,
+                 max_time=6000,
+                 alpha=0.01,
+                 tau_hc=5,
+                 tau_d=0,
+                 k_d=1,
+                 beta1=11.33,
+                 beta2=0.6,
+                 d_traj=None,
+                 temp_lb=296.15,
                  ):
-        self.initial_jacket_temp_min = initial_jacket_temp_min  # K
-        self.initial_jacket_temp_max = initial_jacket_temp_max  # K
-        self.feed_temp = feed_temp  # K
-        self.feed_conc = feed_conc  # mol/m^3
-        self.feed_flowrate = feed_flowrate  # m^3/sec
-        self.tank_vol = tank_vol  # m^3
-        self.rho = rho  # kg/m^3
-        self.cp = cp  # J/mol
-        self.dh = dh  # J/mol
-        self.e_over_r = e_over_r  # K
-        self.preexp_factor = preexp_factor  # 1/sec
-        self.ua = ua  # W/K
-        self.initial_tank_conc_min = initial_tank_conc_min  # mol/m^3
-        self.initial_tank_temp_min = initial_tank_temp_min  # K
-        self.initial_tank_conc_max = initial_tank_conc_max  # mol/m^3
-        self.initial_tank_temp_max = initial_tank_temp_max  # K
 
-        self.dt = dt
-        self.jacket_temp_max = max_jacket_temp  # K
-        self.jacket_temp_min = min_jacket_temp  # K
-        self.jacket_temp_range = max_jacket_temp - min_jacket_temp  # K
-        self.n_look_back = n_look_back
-        self.max_time = max_time
-        self.hold_time = hold_time
-        self.tank_temp_ub = tank_temp_ub
-        self.tank_conc_ub = tank_conc_ub
-        self.rel_diff_for_main_reset = rel_diff_for_main_reset
+        self.initial_temp = initial_temp  # K
+        self.amb_temp = amb_temp  # K
+        self.cp = cp  # J / kg K
+        self.surf_area = surf_area  # m^2
+        self.mass = mass  # kg
+        self.emissivity = emissivity  # unitless
+        self.dt = dt  # s
+        self.max_time = max_time  # number of time steps (10 min)
+        self.alpha = alpha  # W / PWM %
+        self.tau_hc = tau_hc  # s
+        self.tau_d = tau_d  # s
+        self.k_d = k_d  # m/s / PWM %
+        self.beta1 = beta1  # nusselt pre exponential term
+        self.beta2 = beta2  # nusselt power term
+        self.d_traj = d_traj  # PWM %
+        self.temp_lb = temp_lb
+        self.boltzmann = 5.67e-8  # W/ m^2 K^4
+
+        if self.d_traj is None:
+            folder_path_txt = "hidden/box_folder_path.txt"
+            with open(folder_path_txt) as f:
+                content = f.readlines()
+            content = [x.strip() for x in content]
+            box_folder_path = content[0]
+            file_path = "/data/d_traj.csv"
+            df = pd.read_csv(box_folder_path + file_path)
+
+            start = 0
+            stop = 600
+            time = df['index'].values[start:stop]
+            dist = np.clip(
+                pd.to_numeric(df['load'], errors='coerce').values[start:stop],
+                0, None)
+            dist = (dist - np.min(dist)) / (np.max(dist) - np.min(dist)) * (
+                    100 - 20) + 20
+            self.d_traj = dist
 
         self.np_random = None
         self.state = None
-        self.main_reset = True
-        self.last_tank_conc = None
-        self.last_tank_temp = None
-        self.tank_conc_stable_counter = 0
-        self.tank_temp_stable_counter = 0
 
         inf = np.finfo(np.float32).max
 
-        # C_a, Temp, mini_time
-        high_set = [inf, 6e6, self.max_time]
+        # sensor temp, heater temp, fan_velocity
+        high_set = [inf, inf, inf]
         low_set = [0, 0, 0]
-        high = []
-        low = []
-        for i in range(self.n_look_back + 1):
-            high.extend(high_set)
-            low.extend(low_set)
-        high = np.array(high)
-        low = np.array(low)
+        high = np.array(high_set)
+        low = np.array(low_set)
 
         self.action_space = spaces.Box(low=0, high=1, shape=(1,),
                                        dtype=np.float64)
@@ -107,65 +94,38 @@ class FanTempControlLab(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def cstr_step(self, state, time, action, feed_temp, feed_conc):
+    def tclab_step(self, state, time, action, dist):
         """
-        Function to model CSTR in odeint
+        Function to model TCLab with fan in odeint
         :param state: (np.ndarray)
-        :param time: (np.ndarray) time to integrate function over
-        :param action: (float) Temperature of cooling jacket (K)
-        :param feed_temp: (float) Feed Temperature (K)
-        :param feed_conc: (float) Feed Concentration (mol/m^3)
+        :param time: (np.ndarray) time to integrate function over (s)
+        :param action: (float) PWM to heater (%)
+        :param dist: (float) PWM to fan (%)
         :return: new_state: (np.ndarray)
         """
-        jacket_temp = action
-        tank_conc_a = state[0]
-        # tank_conc_b = state[1]
-        tank_temp = state[1]
-        feed_flowrate = self.feed_flowrate
-        tank_vol = self.tank_vol  # m^3
-        rho = self.rho  # kg/m^3
-        cp = self.cp  # J/mol
-        dh = self.dh  # J/mol
-        e_over_r = self.e_over_r  # K
-        preexp_factor = self.preexp_factor  # 1/sec
-        ua = self.ua  # W/K
-        react_rate = preexp_factor * np.exp(
-            -e_over_r / tank_temp) * tank_conc_a
+        heater_pwm = action
+        sensor_temp, heater_temp, fan_speed = state
 
-        dconc_a_dt = feed_flowrate / tank_vol * (
-                feed_conc - tank_conc_a) - react_rate
-        # dconc_b_dt = feed_flowrate / tank_vol * (
-        #         0 - tank_conc_b) + react_rate
-        dtemp_dt = feed_flowrate / tank_vol * (feed_temp - tank_temp) \
-                   + dh / (rho * cp) * react_rate \
-                   + ua / tank_vol / rho / cp * (jacket_temp - tank_temp)
+        dth = (self.surf_area * self.beta1 * fan_speed ** self.beta2 * (
+                self.amb_temp - heater_temp) + self.emissivity * self.boltzmann
+               * self.surf_area * (self.amb_temp ** 4 - heater_temp ** 4)
+               + self.alpha * heater_pwm) / (self.mass * self.cp)
+        duf = (-fan_speed + self.k_d * dist) / self.tau_d
+        dtc = (-sensor_temp + heater_temp) / self.tau_hc
 
-        new_state = np.zeros(2)
-        new_state[0] = dconc_a_dt
-        # new_state[1] = dconc_b_dt
-        new_state[1] = dtemp_dt
+        new_state = np.zeros(3)
+        new_state[0] = dth
+        new_state[1] = duf
+        new_state[2] = dtc
         return new_state
 
     def reset(self):
         self.current_step = 0
         zero = np.float64(0)
-        if self.main_reset:
-            high_set = [self.initial_tank_conc_max,
-                        self.initial_tank_temp_max, zero]
-            low_set = [self.initial_tank_conc_min,
-                       self.initial_tank_temp_min, zero]
-        else:
-            high_set = [self.last_tank_conc,
-                        self.last_tank_temp, zero]
-            low_set = [self.last_tank_conc,
-                       self.last_tank_temp, zero]
-        high = []
-        low = []
-        for i in range(self.n_look_back + 1):
-            high.extend(high_set)
-            low.extend(low_set)
-        high = np.array(high)
-        low = np.array(low)
+        high_set = [self.initial_temp, self.initial_temp, zero]
+        low_set = [self.initial_temp, self.initial_temp, zero]
+        high = np.array(high_set)
+        low = np.array(low_set)
 
         self.state = self.np_random.uniform(low=low, high=high)
         return self.state
@@ -175,64 +135,185 @@ class FanTempControlLab(gym.Env):
         :param action:(np.ndarray)
         :return:
         """
-        tank_conc_a, tank_temp, mini_time = self.state[0:3]
+        sensor_temp, heater_temp, fan_speed = self.state
         action = np.clip(action, 0, 1)
-        jacket_temp = self.jacket_temp_min + self.jacket_temp_range * action[0]
-        inputs = tuple([jacket_temp, self.feed_temp, self.feed_conc])
+        second = self.current_step // 10
+        current_dist = self.d_traj[second]
+        heater_pwm = 100 * action[0]
+        inputs = tuple([heater_pwm, current_dist])
         time = [0, self.dt]
-        new_CA, new_T = \
-            odeint(self.cstr_step, self.state[0:2], time, inputs)[-1]
-        if new_CA < 0:
-            new_CA = 0
-        if new_T < 0:
-            new_T = 0
-        new_mini_time = self.current_step + 1
+        new_sensor_temp, new_heater_temp, new_fan_speed = \
+            odeint(self.tclab_step, self.state, time, inputs)[-1]
 
-        stacks = self.state[0:-3]
-        self.state = [new_CA, new_T, new_mini_time]
-        self.state.extend(stacks)
-        self.state = np.array(self.state)
+        new_sensor_temp = np.clip(new_sensor_temp, 0, None)
+        new_heater_temp = np.clip(new_heater_temp, 0, None)
+        new_fan_speed = np.clip(new_fan_speed, 0, None)
 
-        cooling_reward = -action
-        if mini_time == 1:
-            self.last_tank_conc = tank_conc_a
-            self.last_tank_temp = tank_temp
-            conc_diff = np.abs(tank_conc_a-new_CA)
-            temp_diff = np.abs(tank_temp - new_T)
-            conc_tol = new_CA*self.rel_diff_for_main_reset
-            temp_tol = new_T * self.rel_diff_for_main_reset
-            if new_CA < self.tank_conc_ub:
-                if conc_diff < conc_tol:
-                    self.tank_conc_stable_counter += 1
-                else:
-                    self.tank_conc_stable_counter = 0
-                if temp_diff < temp_tol:
-                    self.tank_temp_stable_counter += 1
-                else:
-                    self.tank_temp_stable_counter = 0
-            if (self.tank_temp_stable_counter >= self.hold_time
-                    or self.tank_conc_stable_counter >= self.hold_time):
-                self.main_reset = True
-            else:
-                self.main_reset = False
+        self.state = [new_sensor_temp, new_heater_temp, new_fan_speed]
 
-        if new_CA < self.tank_conc_ub:
-            conc_a_reward = 0
+        if new_sensor_temp < self.temp_lb:
+            penalty = -10
         else:
-            conc_a_reward = self.tank_conc_ub - new_CA
-        if new_T < self.tank_temp_ub:
-            temp_reward = 0
-        else:
-            temp_reward = self.tank_temp_ub - new_T
+            penalty = 0
 
-        reward = 0 * cooling_reward + 10 * conc_a_reward + temp_reward
+        reward = -heater_pwm - penalty
 
         self.current_step += 1
 
         done = self.current_step >= self.max_time  # or done
-        #      done=False
-        info = {'is_success': done,
-                'jacket_temp': jacket_temp}
+        info = {'is_success': done}
+        return self.state, reward, done, info
+
+    def render(self, mode='human'):
+        print("Not implemented")
+        return
+
+    def close(self):
+        print("Not implemented")
+        return
+
+
+class FanTempControlLabBlackBox(gym.Env):
+    metadata = {
+        'render.modes': ['human', 'rgb_array'],
+        'video.frames_per_second': 30
+    }
+
+    def __init__(self,
+                 initial_temp=296.15,
+                 amb_temp=296.15,
+                 dt=0.1,
+                 max_time=6000,
+                 d_traj=None,
+                 temp_lb=296.15,
+                 c1=0.001,
+                 c2=0.6,
+                 c3=1e-2,
+                 c4=0.05):
+        self.initial_temp = initial_temp
+        self.amb_temp = amb_temp
+        self.dt = dt
+        self.max_time = max_time
+        self.d_traj = d_traj
+        self.temp_lb = temp_lb
+        self.c1 = c1
+        self.c2 = c2
+        self.c3 = c3
+        self.c4 = c4
+
+        if self.d_traj is None:
+            folder_path_txt = "hidden/box_folder_path.txt"
+            with open(folder_path_txt) as f:
+                content = f.readlines()
+            content = [x.strip() for x in content]
+            box_folder_path = content[0]
+            file_path = "/data/d_traj.csv"
+            df = pd.read_csv(box_folder_path + file_path)
+
+            start = 0
+            stop = 600
+            time = df['index'].values[start:stop]
+            dist = np.clip(
+                pd.to_numeric(df['load'], errors='coerce').values[start:stop],
+                0, None)
+            dist = (dist - np.min(dist)) / (np.max(dist) - np.min(dist)) * (
+                    100 - 20) + 20
+            self.d_traj = dist
+
+        self.np_random = None
+        self.state = None
+
+        inf = np.finfo(np.float32).max
+
+        # sensor temp, heater temp
+        high_set = [inf, inf]
+        low_set = [0, 0]
+        high = np.array(high_set)
+        low = np.array(low_set)
+
+        self.action_space = spaces.Box(low=0, high=1, shape=(1,),
+                                       dtype=np.float64)
+
+        self.observation_space = spaces.Box(low=low, high=high,
+                                            dtype=np.float64)
+
+        self.current_step = 0
+        self.seed()
+        self.reset()
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+
+    def tclab_step(self, state, time, action, dist):
+        """
+        Function to model TCLab with fan in odeint
+        :param state: (np.ndarray)
+        :param time: (np.ndarray) time to integrate function over (s)
+        :param action: (float) PWM to heater (%)
+        :param dist: (float) PWM to fan (%)
+        :return: new_state: (np.ndarray)
+        """
+        heater_pwm = action
+        sensor_temp, heater_temp = state
+        c1 = self.c1
+        c2 = self.c2
+        c3 = self.c3
+        c4 = self.c4
+        amb_temp = self.amb_temp
+
+        dth = -c1 * dist ** (
+                c2 - 1) * heater_temp + c3 * heater_pwm + c1 * c2 * dist ** (
+                c2 - 1) * (amb_temp - heater_temp) * dist
+        dtc = c4*heater_temp-c4*sensor_temp
+
+        new_state = np.zeros(2)
+        new_state[0] = dth
+        new_state[1] = dtc
+        return new_state
+
+    def reset(self):
+        self.current_step = 0
+        zero = np.float64(0)
+        high_set = [self.initial_temp, self.initial_temp, zero]
+        low_set = [self.initial_temp, self.initial_temp, zero]
+        high = np.array(high_set)
+        low = np.array(low_set)
+
+        self.state = self.np_random.uniform(low=low, high=high)
+        return self.state
+
+    def step(self, action):
+        """
+        :param action:(np.ndarray)
+        :return:
+        """
+        sensor_temp, heater_temp = self.state
+        action = np.clip(action, 0, 1)
+        second = self.current_step // 10
+        current_dist = self.d_traj[second]
+        heater_pwm = 100 * action[0]
+        inputs = tuple([heater_pwm, current_dist])
+        time = [0, self.dt]
+        new_sensor_temp, new_heater_temp = \
+            odeint(self.tclab_step, self.state, time, inputs)[-1]
+
+        new_sensor_temp = np.clip(new_sensor_temp, 0, None)
+        new_heater_temp = np.clip(new_heater_temp, 0, None)
+
+        self.state = [new_sensor_temp, new_heater_temp]
+
+        if new_sensor_temp < self.temp_lb:
+            penalty = -10
+        else:
+            penalty = 0
+
+        reward = -heater_pwm - penalty
+
+        self.current_step += 1
+
+        done = self.current_step >= self.max_time  # or done
+        info = {'is_success': done}
         return self.state, reward, done, info
 
     def render(self, mode='human'):
