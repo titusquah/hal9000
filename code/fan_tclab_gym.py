@@ -137,8 +137,7 @@ class FanTempControlLabGrayBox(gym.Env):
         """
         sensor_temp, heater_temp, fan_speed = self.state
         action = np.clip(action, 0, 1)
-        second = self.current_step // 10
-        current_dist = self.d_traj[second]
+        current_dist = self.d_traj[self.current_step]
         heater_pwm = 100 * action[0]
         inputs = tuple([heater_pwm, current_dist])
         time = [0, self.dt]
@@ -161,7 +160,8 @@ class FanTempControlLabGrayBox(gym.Env):
         self.current_step += 1
 
         done = self.current_step >= self.max_time  # or done
-        info = {'is_success': done}
+        info = {'is_success': done,
+                'dist': current_dist}
         return self.state, reward, done, info
 
     def render(self, mode='human'):
@@ -212,7 +212,7 @@ class FanTempControlLabBlackBox(gym.Env):
 
             start = 0
             stop = 600
-            time = df['index'].values[start:stop]
+            # time = df['index'].values[start:stop]
             dist = np.clip(
                 pd.to_numeric(df['load'], errors='coerce').values[start:stop],
                 0, None)
@@ -268,15 +268,15 @@ class FanTempControlLabBlackBox(gym.Env):
         dtc = c4*heater_temp-c4*sensor_temp
 
         new_state = np.zeros(2)
-        new_state[0] = dth
-        new_state[1] = dtc
+        new_state[0] = dtc
+        new_state[1] = dth
         return new_state
 
     def reset(self):
         self.current_step = 0
         zero = np.float64(0)
-        high_set = [self.initial_temp, self.initial_temp, zero]
-        low_set = [self.initial_temp, self.initial_temp, zero]
+        high_set = [self.initial_temp, self.initial_temp]
+        low_set = [self.initial_temp, self.initial_temp]
         high = np.array(high_set)
         low = np.array(low_set)
 
@@ -290,8 +290,7 @@ class FanTempControlLabBlackBox(gym.Env):
         """
         sensor_temp, heater_temp = self.state
         action = np.clip(action, 0, 1)
-        second = self.current_step // 10
-        current_dist = self.d_traj[second]
+        current_dist = self.d_traj[self.current_step]
         heater_pwm = 100 * action[0]
         inputs = tuple([heater_pwm, current_dist])
         time = [0, self.dt]
@@ -313,7 +312,8 @@ class FanTempControlLabBlackBox(gym.Env):
         self.current_step += 1
 
         done = self.current_step >= self.max_time  # or done
-        info = {'is_success': done}
+        info = {'is_success': done,
+                'dist': current_dist}
         return self.state, reward, done, info
 
     def render(self, mode='human'):
