@@ -8,7 +8,7 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = "/data/step_test_no_fan_50.csv"
+file_path = "/data/step_test_no_fan_50(2).csv"
 
 # Connect to Arduino
 heater_board = TCLab(port='4')
@@ -23,8 +23,8 @@ sleep_max = 1
 steps_per_second = int(1 / sleep_max)
 
 heater_pwms = np.concatenate((np.zeros(steps_per_second * 5),
-                              np.ones(steps_per_second * 600),
-                              np.zeros(steps_per_second * 300))) * 50
+                              np.ones(steps_per_second * 2400),
+                              np.zeros(steps_per_second * 2400))) * 50
 n = len(heater_pwms)
 try:
     for i in range(1, n):
