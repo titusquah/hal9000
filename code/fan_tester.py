@@ -4,7 +4,7 @@ import time
 
 
 board = pyfirmata.Arduino(
-    "com3")
+    "com5")
 
 it = pyfirmata.util.Iterator(board)
 it.start()

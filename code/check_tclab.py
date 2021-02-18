@@ -6,7 +6,7 @@ import pyfirmata
 
 # Connect to Arduino
 heater_board = TCLab(port='4')
-fan_board = pyfirmata.Arduino("com3")
+fan_board = pyfirmata.Arduino("com5")
 
 it = pyfirmata.util.Iterator(fan_board)
 it.start()
@@ -40,12 +40,12 @@ temps = []
 sleep_max = 1
 steps_per_second = int(1 / sleep_max)
 
-heater_pwms = np.ones(steps_per_second * 20) * 100
-fan_pwms = np.concatenate((np.zeros(steps_per_second * 10),
-                           np.ones(steps_per_second * 10))) * 100
+heater_pwms = np.ones(steps_per_second * 60) * 20
+fan_pwms = np.concatenate((np.zeros(steps_per_second * 30),
+                           np.ones(steps_per_second * 30))) * 100
 n = len(heater_pwms)
 try:
-    for i in range(0, n):
+    for i in range(1, n):
         # Sleep time
         sleep = sleep_max - (time.time() - prev_time)
         if sleep >= 0.01:
