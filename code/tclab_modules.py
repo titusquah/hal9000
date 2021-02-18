@@ -4,6 +4,7 @@ from tclab import TCLab
 import pyfirmata
 import pandas as pd
 
+
 # # Connect to Arduino
 # heater_board = TCLab(port='4')
 # fan_board = pyfirmata.Arduino("com5")
@@ -28,7 +29,11 @@ def fan_cooling(mini_dpin1, mini_heater_board, temp_sp):
     return None
 
 
-def set_initial_temp(mini_heater_board, temp_sp, tol, hold_time):
+def set_initial_temp(mini_heater_board,
+                     temp_sp,
+                     tol,
+                     hold_time,
+                     file_path=None):
     print("Setting initial temperature to {0} °C".format(temp_sp))
     stable = False
     start_time = time.time()
@@ -40,6 +45,7 @@ def set_initial_temp(mini_heater_board, temp_sp, tol, hold_time):
     steps_per_second = int(1 / sleep_max)
     times, temps, heater_pwms = [], [], []
     current_temp = 0
+    ind = 0
     while not stable:
         # Sleep time
         sleep = sleep_max - (time.time() - prev_time)
@@ -67,10 +73,16 @@ def set_initial_temp(mini_heater_board, temp_sp, tol, hold_time):
         mini_heater_board.Q1(mv)
         heater_pwms.append(mv)
         temp_array = np.array(temps)
-        errors = np.abs(temp_array-temp_sp)
-        back_index = int(steps_per_second*hold_time)
+        errors = np.abs(temp_array - temp_sp)
+        back_index = int(steps_per_second * hold_time)
         check_array = errors[-back_index:]
         stable = np.all(check_array < tol)
+        if ind % 100 == 0 and file_path:
+            df = pd.DataFrame({'time': time,
+                               'temp': temps,
+                               'heater_pwm': heater_pwms})
+            df.to_csv(file_path)
+        ind += 1
     mini_heater_board.Q1(0)
     print("Ending set temp procedure, current T = {0} °C".format(current_temp))
     return times, temps, heater_pwms

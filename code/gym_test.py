@@ -61,6 +61,8 @@ ax[1].legend(loc='best')
 
 ax[2].plot(t, dists, 'b-', linewidth=3, label=r'Fan',
            alpha=0.5)
+ax[2].plot(t, d_traj, 'b-', linewidth=3, label=r'Fan',
+           alpha=0.5)
 ax[2].set_ylabel('PWM %')
 ax[2].set_xlabel('Time (min)')
 ax[2].legend(loc='best')
