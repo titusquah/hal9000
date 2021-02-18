@@ -37,7 +37,7 @@ prev_time = start_time
 times = []
 temps = []
 
-sleep_max = 0.5
+sleep_max = 1
 steps_per_second = int(1 / sleep_max)
 
 heater_pwms = np.ones(steps_per_second * 20) * 100
