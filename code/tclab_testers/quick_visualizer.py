@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-file_path = "/data/pid_test(2).csv"
+file_path = "/data/pid_test(5).csv"
 
 
 def visualizer(fp, cols=None):
-    folder_path_txt = "hidden/box_folder_path.txt"
+    folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:
         content = f.readlines()
     content = [x.strip() for x in content]
