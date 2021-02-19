@@ -18,8 +18,8 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 temp_sp = 35
-tol = 0.2
-hold_time = 10
+tol = 0.1
+hold_time = 30
 file_path = "/data/pid_test(1).csv"
 folder_path_txt = "hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
