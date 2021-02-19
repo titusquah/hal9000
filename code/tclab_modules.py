@@ -77,7 +77,7 @@ def set_initial_temp(mini_heater_board,
         back_index = int(steps_per_second * hold_time)
         check_array = errors[-back_index:]
         stable = np.all(check_array < tol)
-        if ind % 100 == 0 and file_path:
+        if ind % 5 == 0 and file_path:
             df = pd.DataFrame({'time': time,
                                'temp': temps,
                                'heater_pwm': heater_pwms})
