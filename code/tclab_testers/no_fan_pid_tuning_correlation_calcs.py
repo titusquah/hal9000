@@ -17,3 +17,9 @@ taui = taup/(1.03-0.165*(thetap/taup))
 print("ITAE Tuning correlations")
 print('Kc: ' + str(kc))
 print('taui: ' + str(taui))
+print()
+kc = 1.1/Kp
+taui = 0.8*taui
+print("Ciancone Tuning correlations")
+print('Kc: ' + str(kc))
+print('taui: ' + str(taui))
