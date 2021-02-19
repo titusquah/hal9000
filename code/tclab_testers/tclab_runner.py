@@ -16,29 +16,41 @@ it.start()
 pntxt2 = "d:{}:o".format(3)
 dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
+times, temps, heater_pwms, fan_pwms = [], [], [], []
 
-temp_sp = 40
-tol = 0.2
-hold_time = 30
-file_path = "/data/pid_test(4).csv"
-folder_path_txt = "hidden/box_folder_path.txt"
+file_path = "/data/pid_test(6).csv"
+folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
 total_file_path = box_folder_path + file_path
-times, temps, heater_pwms, fan_pwms = [], [], [], []
+
+temp_sp = None
+times1, temps1, heater_pwms1, fan_pwms1 = fan_cooling(dpin1,
+                                             heater_board,
+                                             temp_sp)
+times.extend(times1)
+temps.extend(temps1)
+heater_pwms.extend(heater_pwms1)
+fan_pwms.extend(fan_pwms1)
+
+temp_sp = 40
+tol = 0.2
+hold_time = 30
 times1, temps1, heater_pwms1, fan_pwms1 = set_initial_temp(dpin1,
                                              heater_board,
                                              temp_sp,
                                              tol,
                                              hold_time,
                                              file_path=total_file_path)
-
+times1 = np.array(times1)
+times1 = times1 + times[-1]
 times.extend(times1)
 temps.extend(temps1)
 heater_pwms.extend(heater_pwms1)
 fan_pwms.extend(fan_pwms1)
+
 
 
 temp_sp = 35
@@ -53,7 +65,7 @@ heater_pwms.extend(heater_pwms1)
 fan_pwms.extend(fan_pwms1)
 
 temp_sp = 50
-file_path = "/data/pid_test(5).csv"
+file_path = "/data/pid_test(7).csv"
 total_file_path = box_folder_path + file_path
 times1, temps1, heater_pwms1, fan_pwms1 = set_initial_temp(dpin1,
                                              heater_board,
