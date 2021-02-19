@@ -44,6 +44,8 @@ def fan_cooling(mini_dpin1, mini_heater_board, temp_sp=None):
                 fan_pwms.append(mini_dpin1.value)
             else:
                 fan_pwms.append(0)
+            if len(temps)%10 == 0:
+                print("Current T = {0} °C".format(current_temp))
     else:
         stable = False
         steps_per_second = int(1 / sleep_max)
@@ -71,6 +73,9 @@ def fan_cooling(mini_dpin1, mini_heater_board, temp_sp=None):
                 check_array = np.array(temps[-back_index:])
                 max_diff = np.abs(np.max(check_array)-np.min(check_array))
                 stable = max_diff < tol
+                
+            if len(temps)%10 == 0:
+                print("Current T = {0} °C".format(current_temp))
                 
     mini_dpin1.write(0)
     print("Ending cooling procedure")
@@ -118,8 +123,8 @@ def set_initial_temp(mini_dpin1,
         old_error = error
         error = temp_sp - current_temp
 
-        kc = 198.07
-        ti = 303.2
+        kc = 9.15*2
+        ti = 312*0.5
         dmv = kc * (error - old_error + dt / ti * error)
         mv += dmv
         mv = np.clip(mv, 0, 100)
@@ -140,6 +145,8 @@ def set_initial_temp(mini_dpin1,
                                'heater_pwm': heater_pwms})
             df.to_csv(file_path)
         ind += 1
+        if len(temps)%10 == 0:
+                print("Current T = {0} °C".format(current_temp))
     mini_heater_board.Q1(0)
     print("Ending set temp procedure")
     print("Current T = {0} °C".format(current_temp))
