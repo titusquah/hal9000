@@ -123,8 +123,8 @@ def set_initial_temp(mini_dpin1,
         old_error = error
         error = temp_sp - current_temp
 
-        kc = 9.15*2
-        ti = 312*0.5
+        kc = 20 # 9.15*2
+        ti = 70 # 312*0.25
         dmv = kc * (error - old_error + dt / ti * error)
         mv += dmv
         mv = np.clip(mv, 0, 100)
