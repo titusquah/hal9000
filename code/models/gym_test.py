@@ -1,10 +1,9 @@
-from fan_tclab_gym import FanTempControlLabBlackBox as bb_process
-from fan_tclab_gym import FanTempControlLabGrayBox as gb_process
+import fan_tclab_gym as ftg
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-folder_path_txt = "hidden/box_folder_path.txt"
+folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
@@ -20,16 +19,16 @@ d_traj = df.fan_pwm[start:stop] * 100
 
 h_traj = df.heater_pwm[start:stop]
 
-model = bb_process(initial_temp=296.15,
-                   amb_temp=296.15,
-                   dt=0.155,
-                   max_time=6000,
-                   d_traj=d_traj,
-                   temp_lb=296.15,
-                   c1=0.001,
-                   c2=0.6,
-                   c3=1e-2,
-                   c4=0.05)
+model = ftg.FanTempControlLabLinearBlackBox(initial_temp=296.15,
+                                            amb_temp=296.15,
+                                            dt=0.155,
+                                            max_time=6000,
+                                            d_traj=d_traj,
+                                            temp_lb=296.15,
+                                            c1=-0.0003,
+                                            c2=0.004,
+                                            c3=-0.005,
+                                            c4=0.003)
 
 actions = [0]
 dists = [0]
@@ -39,7 +38,7 @@ states.append(state)
 done = False
 ind1 = 0
 while not done:
-    state, reward, done, info = model.step([h_traj[ind1]/100])
+    state, reward, done, info = model.step([h_traj[ind1] / 100])
     actions.append(h_traj[ind1])
     # state, reward, done, info = model.step([0.5])
     # actions.append(0.5)
