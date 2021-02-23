@@ -245,13 +245,14 @@ class FanTempControlLabBlackBox(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def tclab_step(self, state, time, action, dist):
+    def tclab_step(self, state, time, action, dist, old_dist):
         """
         Function to model TCLab with fan in odeint
         :param state: (np.ndarray)
         :param time: (np.ndarray) time to integrate function over (s)
         :param action: (float) PWM to heater (%)
         :param dist: (float) PWM to fan (%)
+        :param old_dist: (float) Last PWM to fan (%)
         :return: new_state: (np.ndarray)
         """
         heater_pwm = action
@@ -262,9 +263,10 @@ class FanTempControlLabBlackBox(gym.Env):
         c4 = self.c4
         amb_temp = self.amb_temp
 
-        dth = -c1 * dist ** (
-                c2 - 1) * heater_temp + c3 * heater_pwm + c1 * c2 * dist ** (
-                      c2 - 1) * (amb_temp - heater_temp) * dist
+        dth = -c1 * old_dist ** (c2 - 1) * heater_temp \
+              + c3 * heater_pwm \
+              + c1 * c2 * old_dist ** (c2 - 1) * (
+                          amb_temp - heater_temp) * dist
         dtc = c4 * heater_temp - c4 * sensor_temp
 
         new_state = np.zeros(2)
@@ -290,9 +292,13 @@ class FanTempControlLabBlackBox(gym.Env):
         """
         sensor_temp, heater_temp = self.state
         action = np.clip(action, 0, 1)
+        if self.current_step > 0:
+            old_dist = self.d_traj[self.current_step]
+        else:
+            old_dist = 0
         current_dist = self.d_traj[self.current_step]
         heater_pwm = 100 * action[0]
-        inputs = tuple([heater_pwm, current_dist])
+        inputs = tuple([heater_pwm, current_dist, old_dist])
         time = [0, self.dt]
         new_sensor_temp, new_heater_temp = \
             odeint(self.tclab_step, self.state, time, inputs)[-1]
@@ -353,13 +359,14 @@ class FanTempControlLabLinearBlackBox(FanTempControlLabBlackBox):
                                                         c3,
                                                         c4)
 
-    def tclab_step(self, state, time, action, dist):
+    def tclab_step(self, state, time, action, dist, old_dist):
         """
         Function to model TCLab with fan in odeint
         :param state: (np.ndarray)
         :param time: (np.ndarray) time to integrate function over (s)
         :param action: (float) PWM to heater (%)
         :param dist: (float) PWM to fan (%)
+        :param old_dist: (float) Last PWM to fan (%) (unused)
         :return: new_state: (np.ndarray)
         """
         heater_pwm = action
@@ -377,3 +384,57 @@ class FanTempControlLabLinearBlackBox(FanTempControlLabBlackBox):
         new_state[0] = dtc
         new_state[1] = dth
         return new_state
+
+
+# class FanTempControlLabAdditiveLinear(FanTempControlLabBlackBox):
+#     metadata = {
+#         'render.modes': ['human', 'rgb_array'],
+#         'video.frames_per_second': 30
+#     }
+#
+#     def __init__(self,
+#                  initial_temp=296.15,
+#                  amb_temp=296.15,
+#                  dt=0.1,
+#                  max_time=6000,
+#                  d_traj=None,
+#                  temp_lb=296.15,
+#                  c1=-0.0003,
+#                  c2=0.004,
+#                  c3=-9.5,
+#                  c4=0.003):
+#         super(FanTempControlLabBlackBox, self).__init__(initial_temp,
+#                                                         amb_temp,
+#                                                         dt,
+#                                                         max_time,
+#                                                         d_traj,
+#                                                         temp_lb,
+#                                                         c1,
+#                                                         c2,
+#                                                         c3,
+#                                                         c4)
+#
+#     def tclab_step(self, state, time, action, dist):
+#         """
+#         Function to model TCLab with fan in odeint
+#         :param state: (np.ndarray)
+#         :param time: (np.ndarray) time to integrate function over (s)
+#         :param action: (float) PWM to heater (%)
+#         :param dist: (float) PWM to fan (%)
+#         :return: new_state: (np.ndarray)
+#         """
+#         heater_pwm = action
+#         sensor_temp, heater_temp = state
+#         c1 = self.c1
+#         c2 = self.c2
+#         c3 = self.c3
+#         c4 = self.c4
+#         amb_temp = self.amb_temp
+#
+#         dth = c1 * heater_temp + c2 * heater_pwm + c3 * dist
+#         dtc = c4 * heater_temp - c4 * sensor_temp
+#
+#         new_state = np.zeros(2)
+#         new_state[0] = dtc
+#         new_state[1] = dth
+#         return new_state
