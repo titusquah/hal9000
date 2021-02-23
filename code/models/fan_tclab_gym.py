@@ -264,8 +264,8 @@ class FanTempControlLabBlackBox(gym.Env):
 
         dth = -c1 * dist ** (
                 c2 - 1) * heater_temp + c3 * heater_pwm + c1 * c2 * dist ** (
-                c2 - 1) * (amb_temp - heater_temp) * dist
-        dtc = c4*heater_temp-c4*sensor_temp
+                      c2 - 1) * (amb_temp - heater_temp) * dist
+        dtc = c4 * heater_temp - c4 * sensor_temp
 
         new_state = np.zeros(2)
         new_state[0] = dtc
@@ -323,3 +323,57 @@ class FanTempControlLabBlackBox(gym.Env):
     def close(self):
         print("Not implemented")
         return
+
+
+class FanTempControlLabLinearBlackBox(FanTempControlLabBlackBox):
+    metadata = {
+        'render.modes': ['human', 'rgb_array'],
+        'video.frames_per_second': 30
+    }
+
+    def __init__(self,
+                 initial_temp=296.15,
+                 amb_temp=296.15,
+                 dt=0.1,
+                 max_time=6000,
+                 d_traj=None,
+                 temp_lb=296.15,
+                 c1=0.001,
+                 c2=0.6,
+                 c3=1e-2,
+                 c4=0.05):
+        super(FanTempControlLabBlackBox, self).__init__(initial_temp,
+                                                        amb_temp,
+                                                        dt,
+                                                        max_time,
+                                                        d_traj,
+                                                        temp_lb,
+                                                        c1,
+                                                        c2,
+                                                        c3,
+                                                        c4)
+
+    def tclab_step(self, state, time, action, dist):
+        """
+        Function to model TCLab with fan in odeint
+        :param state: (np.ndarray)
+        :param time: (np.ndarray) time to integrate function over (s)
+        :param action: (float) PWM to heater (%)
+        :param dist: (float) PWM to fan (%)
+        :return: new_state: (np.ndarray)
+        """
+        heater_pwm = action
+        sensor_temp, heater_temp = state
+        c1 = self.c1
+        c2 = self.c2
+        c3 = self.c3
+        c4 = self.c4
+        amb_temp = self.amb_temp
+
+        dth = c1 * heater_temp + c2 * heater_pwm + c3 * dist
+        dtc = c4 * heater_temp - c4 * sensor_temp
+
+        new_state = np.zeros(2)
+        new_state[0] = dtc
+        new_state[1] = dth
+        return new_state
