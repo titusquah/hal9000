@@ -338,10 +338,10 @@ class FanTempControlLabLinearBlackBox(FanTempControlLabBlackBox):
                  max_time=6000,
                  d_traj=None,
                  temp_lb=296.15,
-                 c1=0.001,
-                 c2=0.6,
-                 c3=1e-2,
-                 c4=0.05):
+                 c1=-0.0003,
+                 c2=0.004,
+                 c3=-9.5,
+                 c4=0.003):
         super(FanTempControlLabBlackBox, self).__init__(initial_temp,
                                                         amb_temp,
                                                         dt,
