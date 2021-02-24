@@ -374,11 +374,9 @@ class FanTempControlLabLinearBlackBox(FanTempControlLabBlackBox):
         c1 = self.c1
         c2 = self.c2
         c3 = self.c3
-        c4 = self.c4
-        amb_temp = self.amb_temp
 
-        dth = c1 * heater_temp + c2 * heater_pwm + c3 * dist
-        dtc = c4 * heater_temp - c4 * sensor_temp
+        dth = 0
+        dtc = -c1*sensor_temp+c2*heater_pwm+c3*dist
 
         new_state = np.zeros(2)
         new_state[0] = dtc
