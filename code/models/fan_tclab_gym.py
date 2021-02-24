@@ -186,10 +186,10 @@ class FanTempControlLabBlackBox(gym.Env):
                  max_time=6000,
                  d_traj=None,
                  temp_lb=296.15,
-                 c1=0.001,
-                 c2=0.6,
-                 c3=1e-2,
-                 c4=0.05):
+                 c1=7e-4,
+                 c2=0.8,
+                 c3=4e-3,
+                 c4=3e-3):
         self.initial_temp = initial_temp
         self.amb_temp = amb_temp
         self.dt = dt
@@ -295,7 +295,7 @@ class FanTempControlLabBlackBox(gym.Env):
         if self.current_step > 0:
             old_dist = self.d_traj[self.current_step]
         else:
-            old_dist = 0
+            old_dist = 20
         current_dist = self.d_traj[self.current_step]
         heater_pwm = 100 * action[0]
         inputs = tuple([heater_pwm, current_dist, old_dist])
