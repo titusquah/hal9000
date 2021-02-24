@@ -4,6 +4,12 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from scipy.optimize import minimize
 from scipy.interpolate import interp1d
+import matplotlib
+
+font = {'family': 'DejaVu Sans',
+        'weight': 'bold',
+        'size': 16}
+matplotlib.rc('font', **font)
 
 # Import CSV data file
 file_path = "/data/step_test_no_fan_50(2).csv"
@@ -87,7 +93,7 @@ x0[0] = 1.0758313073767947  # Km
 x0[1] = 312.2249176059667  # taum
 x0[2] = 0.0  # thetam
 
-x=x0
+x = x0
 # # show initial objective
 # print('Initial SSE Objective: ' + str(objective(x0)))
 #
@@ -110,7 +116,7 @@ print('thetap: ' + str(x[2]))
 ym1 = sim_model(x0)
 ym2 = sim_model(x)
 # plot results
-plt.figure()
+plt.figure(figsize=(10, 8))
 plt.subplot(2, 1, 1)
 plt.plot(t, yp, 'kx', linewidth=2, label='Process Data')
 # plt.plot(t, ym1, 'b-', linewidth=2, label='Initial Guess')
