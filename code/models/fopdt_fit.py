@@ -8,7 +8,7 @@ from scipy.interpolate import interp1d
 # Import CSV data file
 file_path = "/data/step_test_no_fan_50(2).csv"
 
-folder_path_txt = "hidden/box_folder_path.txt"
+folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
@@ -112,14 +112,15 @@ ym2 = sim_model(x)
 # plot results
 plt.figure()
 plt.subplot(2, 1, 1)
-plt.plot(t, yp, 'kx-', linewidth=2, label='Process Data')
-plt.plot(t, ym1, 'b-', linewidth=2, label='Initial Guess')
-plt.plot(t, ym2, 'r--', linewidth=3, label='Optimized FOPDT')
-plt.ylabel('Output')
+plt.plot(t, yp, 'kx', linewidth=2, label='Process Data')
+# plt.plot(t, ym1, 'b-', linewidth=2, label='Initial Guess')
+plt.plot(t, ym2, 'r--', linewidth=3, label='Fitted Model')
+plt.ylabel('Temperature (°C)')
 plt.legend(loc='best')
 plt.subplot(2, 1, 2)
 plt.plot(t, u, 'bx-', linewidth=2)
-plt.plot(t, uf(t), 'r--', linewidth=3)
-plt.legend(['Measured', 'Interpolated'], loc='best')
-plt.ylabel('Input Data')
+# plt.plot(t, uf(t), 'r--', linewidth=3)
+# plt.legend(['Measured', 'Interpolated'], loc='best')
+plt.ylabel('Heater PWM (%)')
+plt.xlabel('Time (s)')
 plt.show()
