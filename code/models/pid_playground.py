@@ -3,25 +3,24 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 start = 0
 stop = 6001
-d_traj = np.ones(6000)*20
+d_traj = np.ones(6001) * 20
 
 init_temp = 298
 temp_sp = 313
 dt = 0.155
 
-model = ftg.FanTempControlLabLinearBlackBox(initial_temp=init_temp,
-                                            amb_temp=init_temp,
-                                            dt=dt,
-                                            max_time=6000,
-                                            d_traj=d_traj,
-                                            temp_lb=296.15,
-                                            c1=-0.0003,
-                                            c2=0.008,
-                                            c3=-0.005,
-                                            c4=0.003)
+model = ftg.FanTempControlLabBlackBox(initial_temp=init_temp,
+                                      amb_temp=init_temp,
+                                      dt=dt,
+                                      max_time=6000,
+                                      d_traj=d_traj,
+                                      temp_lb=296.15,
+                                      c1=0.0007,
+                                      c2=0.800573,
+                                      c3=0.00395524,
+                                      c4=0.00284566)
 action = 0
 actions = [action]
 dists = [0]
@@ -39,10 +38,10 @@ while not done:
     states.append(state)
 
     ### do some code here###
-    action = ???
+    action = 1
     ind1 += 1
-states = np.array(states)-273.15
-t = np.linspace(0, len(states)*dt+dt, len(states))
+states = np.array(states) - 273.15
+t = np.linspace(0, len(states) * dt, len(states))
 fig, ax = plt.subplots(3, figsize=(10, 7))
 ax[0].plot(t, actions, 'b--', linewidth=3)
 

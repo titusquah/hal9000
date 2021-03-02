@@ -58,6 +58,6 @@ mpc.Equation(temp_heater.dt() == -c1 * fan_pwm ** (c2 - 1) * temp_heater
              + c3*heater_pwm
              + c1*c2*fan_pwm**(c2-1)*(amb_temp-temp_heater)*fan_pwm)
 mpc.Equation((temp_sensor.dt() == c4*temp_heater-c4*temp_sensor))
-penalty = mpc.Intermediate()
-mpc.Obj(temp_heater+penalty)
+mpc.Equation((temp_sensor.dt() == c4*temp_heater-c4*temp_sensor))
+mpc.Obj(temp_heater)
 
