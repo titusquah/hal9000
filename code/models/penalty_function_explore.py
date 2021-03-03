@@ -3,17 +3,18 @@ import matplotlib.pyplot as plt
 
 
 def penalty(t, k):
+    return np.log(1+np.exp(k*t))/k
     # return k * t / (k - t + 1)
 
+temp_lb = 310
 
-
-t = np.linspace(-1, 1)
-k = 0.2
-
-p = penalty(t, k)
+temp = np.linspace(290, 320)
+k = 10
+diff = temp_lb-temp
+p = penalty(diff, k)
 
 
 plt.close('all')
 plt.figure()
-plt.plot(t, p)
+plt.plot(diff, p)
 plt.show()

@@ -51,7 +51,7 @@ class FanTempControlLabGrayBox(gym.Env):
         self.boltzmann = 5.67e-8  # W/ m^2 K^4
 
         if self.d_traj is None:
-            folder_path_txt = "hidden/box_folder_path.txt"
+            folder_path_txt = "../hidden/box_folder_path.txt"
             with open(folder_path_txt) as f:
                 content = f.readlines()
             content = [x.strip() for x in content]
@@ -202,7 +202,7 @@ class FanTempControlLabBlackBox(gym.Env):
         self.c4 = c4
 
         if self.d_traj is None:
-            folder_path_txt = "hidden/box_folder_path.txt"
+            folder_path_txt = "../hidden/box_folder_path.txt"
             with open(folder_path_txt) as f:
                 content = f.readlines()
             content = [x.strip() for x in content]
