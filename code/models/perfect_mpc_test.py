@@ -3,7 +3,7 @@ import numpy as np
 import fan_tclab_gym as ftg
 import matplotlib.pyplot as plt
 
-n_steps = 5001
+n_steps = 1001
 c1 = 0.00073258
 c2 = 0.800573
 c3 = 0.00395524
@@ -27,12 +27,16 @@ while counter < n_steps:
     ind1 += 1
     counter += 100
 d_traj = np.concatenate(mini_list)
+d_traj_extend = np.concatenate([d_traj, np.ones(len(d_traj)) * d_traj[-1]])
+
 
 initial_temp = 311.5
 amb_temp = 296.15
 log_barrier_tau = 0.5
 penalty_scale = 1e5
 steepness = 10
+
+horizon = 50
 
 env = ftg.FanTempControlLabBlackBox(initial_temp=initial_temp,
                                     amb_temp=amb_temp,
@@ -45,7 +49,7 @@ env = ftg.FanTempControlLabBlackBox(initial_temp=initial_temp,
                                     c3=c3,
                                     c4=c4)
 mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
-mpc.time = np.linspace(0, 50, 51)
+mpc.time = np.linspace(0, horizon, horizon + 1)
 c1 = mpc.Param(value=c1)
 c2 = mpc.Param(value=c2)
 c3 = mpc.Param(value=c3)
@@ -112,7 +116,8 @@ while not done:
         print(ind1)
     temp_sensor.MEAS = state[0]
     print(temp_sensor.VALUE)
-    fan_pwm.MEAS = info['dist']
+    fan_pwm.VALUE = d_traj[ind1:ind1+horizon+1]
+    print(fan_pwm.VALUE)
     try:
         mpc.solve(disp=False)
         if mpc.options.APPSTATUS == 1:
