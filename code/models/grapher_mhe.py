@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-
 start = 0
 stop = 12001
 folder_path_txt = "../hidden/box_folder_path.txt"
@@ -13,7 +12,15 @@ box_folder_path = content[0]
 file_path = '/data/mhe_test_{0}_{1}.csv'.format(start, stop)
 df = pd.read_csv(box_folder_path + file_path)
 
-plt.figure()
-plt.plot(df.time, df.temp, 'bo', label='Measured', markersize=2)
-plt.plot(df.time, df.est_temp, 'b-', label='Predicted')
+mini_start = 0
+mini_stop = 200
+fig, ax = plt.subplots(2)
+ax[0].plot(df.time[mini_start:mini_stop],
+           df.temp[mini_start:mini_stop], 'bo', label='Measured', markersize=2)
+ax[0].plot(df.time[mini_start:mini_stop],
+           df.est_temp[mini_start:mini_stop], 'b-', label='Predicted')
+ax[1].plot(df.time[mini_start:mini_stop], df.c2[mini_start:mini_stop], 'b-', label='$c_2$')
+ax[1].plot(df.time[mini_start:mini_stop], df.c1[mini_start:mini_stop], 'b-', label='$c_1$')
+ax[1].plot(df.time[mini_start:mini_stop], df.c3[mini_start:mini_stop], 'b-', label='$c_3$')
+ax[1].plot(df.time[mini_start:mini_stop], df.c4[mini_start:mini_stop], 'b-', label='$c_4$')
 plt.show()

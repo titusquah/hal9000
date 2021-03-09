@@ -16,5 +16,5 @@ p = penalty(diff, k)
 
 plt.close('all')
 plt.figure()
-plt.plot(diff, p)
+plt.plot(diff, 1e5*p)
 plt.show()

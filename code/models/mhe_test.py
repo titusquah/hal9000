@@ -25,8 +25,8 @@ stop = 12001
 lookback_time = 20  # s
 save_file = box_folder_path + '/data/mhe_test_{0}_{1}.csv'.format(start, stop)
 
-initial_temp = df['temp'][0] + 273.15
-amb_temp = df['temp'][0] + 273.15
+initial_temp = df['temp'][0] #+ 273.15
+amb_temp = df['temp'][0] #+ 273.15
 
 mhe = GEKKO(name='tclab-mhe', remote=False, server='http://127.0.0.1')
 mhe.time = np.arange(0, lookback_time, dt)
@@ -35,18 +35,21 @@ c2 = mhe.FV(value=c2)
 c3 = mhe.FV(value=c3)
 c4 = mhe.FV(value=c4)
 cs = [c1, c2, c3, c4]
+
+c3.STATUS = 1
 for c in cs:
     c.STATUS = 0
     c.FSTATUS = 0
     c.LOWER = 0
+    c.DMAX = c.VALUE
 
 fan_pwm = mhe.MV(value=20)
-fan_pwm.STATUS = 0.
-fan_pwm.FSTATUS = 1.
+fan_pwm.STATUS = 0
+fan_pwm.FSTATUS = 1
 
 heater_pwm = mhe.MV(value=100)
-heater_pwm.STATUS = 0.
-heater_pwm.FSTATUS = 1.
+heater_pwm.STATUS = 0
+heater_pwm.FSTATUS = 1
 
 # State variables
 temp_heater = mhe.SV(value=initial_temp)
