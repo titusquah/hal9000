@@ -104,7 +104,7 @@ df = pd.DataFrame({'time': times,
                    'heater_pwm': heater_pwms,
                    'fan_pwm': fan_pwms})
 file_path="/data/heating_cooling(2).csv"
-total_file_path3 = box_folder_path + file_path
+total_file_path = box_folder_path + file_path
 df.to_csv(total_file_path)
 
 
