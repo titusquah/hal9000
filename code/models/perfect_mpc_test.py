@@ -4,10 +4,10 @@ import fan_tclab_gym as ftg
 import matplotlib.pyplot as plt
 
 n_steps = 1001
-c1 = 0.00073258
-c2 = 0.800573
-c3 = 0.00395524
-c4 = 0.00284566
+c1 = 0.00464991
+c2 = 0.801088
+c3 = 0.0251691
+c4 = 0.0184281
 # c4 = 0.1
 temp_lb1 = 311  # K
 dt = 1
