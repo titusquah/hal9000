@@ -19,6 +19,8 @@ c4 = 0.0184281
 init_cs = [c1, c2, c3, c4]
 
 dt = 0.155
+max_change = 0.8
+min_change = 0.02
 
 start = 0
 stop = 12001
@@ -40,7 +42,7 @@ for c in cs:
     c.STATUS = 0
     c.FSTATUS = 0
     c.LOWER = 0
-    c.DMAX = max(init_cs)
+    c.DMAX = max_change
 
 fan_pwm = mhe.MV(value=20)
 fan_pwm.STATUS = 0
@@ -80,11 +82,14 @@ temps = df['temp'].values
 est_temps = []
 est_cs = [[] for i in range(4)]
 fail_counter = 0
+update_counter = 0
 for i in range(start, stop):
     if i - start > len(mhe.time):
         for ind1,c in enumerate(cs):
-            if i % 4 == ind1:
+            if i % 40 == ind1:
                 c.STATUS = 1
+                update_counter+=1
+                c.DMAX = 
             else:
                 c.STATUS = 0
 
