@@ -159,7 +159,11 @@ def nominal_mpc_test(mini_dpin1,
                      mini_heater_board,
                      temp_lb,
                      d_traj,
-                     file_path=None, ):
+                     file_path=None,
+                     dt=1,
+                     look_back=10,
+                     look_forward=50,
+                     ):
 
     print("Starting nominal MPC with T_lb =  {0} °C".format(temp_lb))
 

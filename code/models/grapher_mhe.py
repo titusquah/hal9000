@@ -9,11 +9,11 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = '/data/mhe_test_{0}_{1}.csv'.format(start, stop)
+file_path = '/data/mhe_test_{0}_{1}(1).csv'.format(start, stop)
 df = pd.read_csv(box_folder_path + file_path)
 
 mini_start = 0
-mini_stop = 200
+mini_stop = 10000
 fig, ax = plt.subplots(2)
 ax[0].plot(df.time[mini_start:mini_stop],
            df.temp[mini_start:mini_stop], 'bo', label='Measured', markersize=2)
@@ -23,4 +23,5 @@ ax[1].plot(df.time[mini_start:mini_stop], df.c2[mini_start:mini_stop], 'b-', lab
 ax[1].plot(df.time[mini_start:mini_stop], df.c1[mini_start:mini_stop], 'b-', label='$c_1$')
 ax[1].plot(df.time[mini_start:mini_stop], df.c3[mini_start:mini_stop], 'b-', label='$c_3$')
 ax[1].plot(df.time[mini_start:mini_stop], df.c4[mini_start:mini_stop], 'b-', label='$c_4$')
+
 plt.show()
