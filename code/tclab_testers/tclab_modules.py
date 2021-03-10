@@ -3,6 +3,7 @@ import time
 from tclab import TCLab
 import pyfirmata
 import pandas as pd
+from gekko import GEKKO
 
 
 # # Connect to Arduino
@@ -15,6 +16,17 @@ import pandas as pd
 # pntxt2 = "d:{}:o".format(3)
 # dpin1 = fan_board.get_pin(pntxt2)
 # dpin1.mode = 3
+def get_d_traj(case, hold_time):
+    folder_path_txt = "../hidden/box_folder_path.txt"
+    with open(folder_path_txt) as f:
+        content = f.readlines()
+    content = [x.strip() for x in content]
+    box_folder_path = content[0]
+    file_path = "/data/dist_cases.csv"
+    df = pd.read_csv(box_folder_path + file_path)
+    d_traj = df['case{}'.format(case + 1)].values / 16 * 80 + 20
+    d_traj = np.repeat(d_traj, hold_time)
+    return d_traj
 
 
 def fan_cooling(mini_dpin1, mini_heater_board, temp_sp=None):
@@ -159,11 +171,80 @@ def nominal_mpc_test(mini_dpin1,
                      mini_heater_board,
                      temp_lb,
                      d_traj,
+                     amb_temp,
+                     init_temp,
                      file_path=None,
                      dt=1,
-                     look_back=10,
-                     look_forward=50,
+                     look_back=11,
+                     look_forward=51,
                      ):
+    max_change = 0.8
+    min_change = 0.02
+    decay_rate = 0.005
+    mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
+    mhe = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
+    mpc.time = np.linspace(0, (look_forward - 1) * dt, look_forward)
+    mhe.time = np.linspace(0, (look_back - 1) * dt, look_back)
+    apm_models = [mhe, mpc]
+    for ind, apm_model in enumerate(apm_models):
+        apm_model.c1 = apm_model.FV(value=0.39)
+        apm_model.c2 = apm_model.FV(value=1.18)
+        apm_model.c3 = apm_model.FV(value=0.26)
+        apm_model.c4 = apm_model.FV(value=0.007)
+        cs = [apm_model.c1, apm_model.c2, apm_model.c3, apm_model.c4]
+
+        apm_model.fan_pwm = apm_model.MV(value=20)
+        apm_model.fan_pwm.STATUS = 0
+        apm_model.fan_pwm.FSTATUS = 1
+
+        apm_model.heater_pwm = mpc.MV(value=100)
+        apm_model.temp_heater = mpc.SV(value=init_temp)
+
+        if ind == 0:
+            for c in cs:
+                c.STATUS = 0
+                c.FSTATUS = 0
+                c.LOWER = 0
+                c.DMAX = max_change
+            apm_model.heater_pwm.STATUS = 0
+            apm_model.heater_pwm.FSTATUS = 1
+            apm_model.temp_sensor = mhe.CV(value=init_temp, name='tc1')
+            apm_model.temp_sensor.STATUS = 1
+            apm_model.temp_sensor.FSTATUS = 1.
+            apm_model.temp_sensor.MEAS_GAP = 0.1
+        else:
+            for c in cs:
+                c.STATUS = 0
+                c.FSTATUS = 1
+            p = np.zeros(len(mpc.time))
+            p[-1] = 1.0
+            apm_model.final = mpc.Param(value=p)
+
+            apm_model.heater_pwm.STATUS = 1
+            apm_model.heater_pwm.FSTATUS = 0.
+            # heater_pwm.DMAX = 20
+            # heater_pwm.DCOST = 0.1
+            apm_model.heater_pwm.LOWER = 0
+            apm_model.heater_pwm.UPPER = 100
+
+            apm_model.temp_sensor = mpc.SV(value=init_temp, name='tc1')
+            apm_model.temp_sensor.STATUS = 0
+            apm_model.temp_sensor.FSTATUS = 1.
+        apm_model.h = mpc.Intermediate(apm_model.c1
+                                       * apm_model.fan_pwm
+                                       ** (apm_model.c2 - 1))
+        apm_model.Equation(apm_model.temp_heater.dt()
+                           == -apm_model.h * apm_model.temp_heater
+                           + apm_model.c3 * apm_model.heater_pwm
+                           + apm_model.c2 * apm_model.h * (
+                                   amb_temp - apm_model.temp_heater)
+                           * apm_model.fan_pwm)
+        apm_model.Equation(
+            (apm_model.temp_sensor.dt() == apm_model.c4
+             * apm_model.temp_heater - apm_model.c4 * apm_model.temp_sensor))
+
+        if ind == 0:
+            
 
     print("Starting nominal MPC with T_lb =  {0} °C".format(temp_lb))
 
