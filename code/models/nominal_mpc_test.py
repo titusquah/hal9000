@@ -3,6 +3,7 @@ import numpy as np
 import fan_tclab_gym as ftg
 import matplotlib.pyplot as plt
 import pandas as pd
+from utils import get_d_traj
 
 n_steps = 401
 c1 = 0.00464991
@@ -10,9 +11,9 @@ c2 = 0.801088
 c3 = 0.0251691
 c4 = 0.0184281
 # c4 = 0.1
-amb_temp = 23+273.15
-temp_lb1 = amb_temp+13  # K
-initial_temp = temp_lb1+1
+amb_temp = 23 + 273.15
+temp_lb1 = amb_temp + 13  # K
+initial_temp = temp_lb1 + 1
 dt = 1
 d_traj = np.ones(n_steps) * 20
 d_traj = np.sin(np.linspace(0, 100, n_steps) / 10) * 40 + 60
@@ -30,6 +31,9 @@ while counter < n_steps:
     ind1 += 1
     counter += 100
 d_traj = np.concatenate(mini_list)
+
+d_traj = get_d_traj(1, 5)
+n_steps = len(d_traj)
 
 log_barrier_tau = 0.5
 penalty_scale = 1e5
@@ -83,7 +87,7 @@ mpc.Equation(temp_heater.dt() == -h * temp_heater
                      amb_temp - temp_heater) * fan_pwm)
 mpc.Equation((temp_sensor.dt() == c4 * temp_heater - c4 * temp_sensor))
 # mpc.Equation((temp_sensor >= temp_lb))
-#mpc.Obj(mpc.integral(heater_pwm) * final + penalty_scale * mpc.log(
+# mpc.Obj(mpc.integral(heater_pwm) * final + penalty_scale * mpc.log(
 #    1 + mpc.exp(steepness * (temp_lb - temp_sensor))) / steepness)
 mpc.Obj(mpc.integral(heater_pwm + penalty_scale * mpc.log(
     1 + mpc.exp(steepness * (temp_lb - temp_sensor))) / steepness) * final)
@@ -120,7 +124,7 @@ while not done:
         if mpc.options.APPSTATUS == 1:
             # Retrieve new values
             action = heater_pwm.NEWVAL / 100
-#            print(heater_pwm.VALUE)
+        #            print(heater_pwm.VALUE)
         else:
             action = 1
     except Exception as e:
@@ -144,13 +148,12 @@ ax[1].legend(loc='best')
 
 ax[2].plot(t, dists, 'b-', linewidth=3, label=r'Fan',
            alpha=0.5)
-#ax[2].plot(t, d_traj, 'b-', linewidth=3, label=r'Fan',
+# ax[2].plot(t, d_traj, 'b-', linewidth=3, label=r'Fan',
 #           alpha=0.5)
 ax[2].set_ylabel('PWM %')
 ax[2].set_xlabel('Time (min)')
 ax[2].legend(loc='best')
 plt.show()
-
 
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
@@ -158,12 +161,12 @@ with open(folder_path_txt) as f:
 content = [x.strip() for x in content]
 box_folder_path = content[0]
 
-save_file = (box_folder_path 
-             + '/data/simulated_nominal_mpc_step_test(3).csv')
-data_dict = {'time':t,
-             'temp_sensor':states[:,0],
-             'temp_heater':states[:,1],
-             'temp_lb':(temp_lb1-273.15)*np.ones(len(t)),
+save_file = (box_folder_path
+             + '/data/simulated_nominal_mpc_step_test(4).csv')
+data_dict = {'time': t,
+             'temp_sensor': states[:, 0],
+             'temp_heater': states[:, 1],
+             'temp_lb': (temp_lb1 - 273.15) * np.ones(len(t)),
              'heater_pwm': actions,
              'fan_pwm': dists}
 df = pd.DataFrame(data_dict)
