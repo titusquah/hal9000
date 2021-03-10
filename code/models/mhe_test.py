@@ -24,9 +24,9 @@ min_change = 0.02
 decay_rate = 0.005
 
 start = 0
-stop = 12001
+stop = len(df)
 lookback_time = 10  # s
-save_file = box_folder_path + '/data/mhe_test_{0}_{1}(1).csv'.format(start, stop)
+save_file = box_folder_path + '/data/mhe_test_{0}_{1}(4).csv'.format(start, stop)
 
 initial_temp = df['temp'][0] #+ 273.15
 amb_temp = df['temp'][0] #+ 273.15
@@ -90,7 +90,7 @@ for i in range(start, stop):
             if i % 40 == ind1:
                 c.STATUS = 1
                 update_counter += 1
-                c.DMAX = max_change*np.exp(-decay_rate*fail_counter)+min_change
+                c.DMAX = max_change*np.exp(-decay_rate*update_counter)+min_change
             else:
                 c.STATUS = 0
 
