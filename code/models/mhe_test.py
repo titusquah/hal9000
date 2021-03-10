@@ -21,6 +21,7 @@ init_cs = [c1, c2, c3, c4]
 dt = 0.155
 max_change = 0.8
 min_change = 0.02
+decay_rate = 0.005
 
 start = 0
 stop = 12001
@@ -85,11 +86,11 @@ fail_counter = 0
 update_counter = 0
 for i in range(start, stop):
     if i - start > len(mhe.time):
-        for ind1,c in enumerate(cs):
+        for ind1, c in enumerate(cs):
             if i % 40 == ind1:
                 c.STATUS = 1
-                update_counter+=1
-                c.DMAX = 
+                update_counter += 1
+                c.DMAX = max_change*np.exp(-decay_rate*fail_counter)+min_change
             else:
                 c.STATUS = 0
 
