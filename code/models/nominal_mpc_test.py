@@ -11,7 +11,7 @@ c3 = 0.0251691
 c4 = 0.0184281
 # c4 = 0.1
 amb_temp = 23+273.15
-temp_lb1 = amb_temp+10  # K
+temp_lb1 = amb_temp+13  # K
 initial_temp = temp_lb1+1
 dt = 1
 d_traj = np.ones(n_steps) * 20
@@ -159,7 +159,7 @@ content = [x.strip() for x in content]
 box_folder_path = content[0]
 
 save_file = (box_folder_path 
-             + '/data/simulated_nominal_mpc_step_test(2).csv')
+             + '/data/simulated_nominal_mpc_step_test(3).csv')
 data_dict = {'time':t,
              'temp_sensor':states[:,0],
              'temp_heater':states[:,1],
