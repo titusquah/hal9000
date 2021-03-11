@@ -16,7 +16,7 @@ from gekko import GEKKO
 # pntxt2 = "d:{}:o".format(3)
 # dpin1 = fan_board.get_pin(pntxt2)
 # dpin1.mode = 3
-def get_d_traj(case, hold_time):
+def get_d_traj(case, hold_time=5):
     folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:
         content = f.readlines()
