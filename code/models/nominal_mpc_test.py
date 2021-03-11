@@ -32,7 +32,7 @@ while counter < n_steps:
     counter += 100
 d_traj = np.concatenate(mini_list)
 
-for case in range(2,7):
+for case in range(7):
     c1 = 0.00464991
     c2 = 0.801088
     c3 = 0.0251691

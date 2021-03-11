@@ -29,7 +29,11 @@ def get_d_traj(case, hold_time=5):
     return d_traj
 
 
-def fan_cooling(mini_dpin1, mini_heater_board, temp_sp=None):
+def fan_cooling(mini_dpin1,
+                mini_heater_board,
+                temp_sp=None,
+                hold_time=20,
+                tol=0.3):
     print("Starting cooling procedure")
     mini_heater_board.Q1(0)
     mini_heater_board.Q2(0)
@@ -61,9 +65,7 @@ def fan_cooling(mini_dpin1, mini_heater_board, temp_sp=None):
     else:
         stable = False
         steps_per_second = int(1 / sleep_max)
-        hold_time = 10  # s
         back_index = int(steps_per_second * hold_time)
-        tol = 0.3
         while not stable:
             sleep = sleep_max - (time.time() - prev_time)
             if sleep >= 0.01:
