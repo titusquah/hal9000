@@ -42,7 +42,7 @@ for trial in trials:
     temp_sp = None
     times1, temps1, heater_pwms1, fan_pwms1 = tcm.fan_cooling(dpin1,
                                                               heater_board,
-                                                              temp_sp)
+                                                              temp_sp=None)
 
     amb_temp = min(temps1)
 
@@ -67,3 +67,6 @@ for trial in trials:
          look_back=11,
          look_forward=51,
          )
+tcm.fan_cooling(dpin1,heater_board,temp_sp=None)
+heater_board.close()
+fan_board.exit()
