@@ -56,17 +56,20 @@ for trial in trials:
                                                                    hold_time)
     init_temp = temps1[-1]
     d_traj = tcm.get_d_traj(trial[1])
-    test(dpin1,
-         heater_board,
-         tlb,
-         d_traj,
-         amb_temp,
-         init_temp,
-         file_path=file_path,
-         dt=1,
-         look_back=11,
-         look_forward=51,
-         )
+    try:
+        test(dpin1,
+             heater_board,
+             tlb,
+             d_traj,
+             amb_temp,
+             init_temp,
+             file_path=total_file_path,
+             dt=1,
+             look_back=11,
+             look_forward=51,
+             )
+    except:
+        break
 tcm.fan_cooling(dpin1,heater_board,temp_sp=None)
 heater_board.close()
 fan_board.exit()
