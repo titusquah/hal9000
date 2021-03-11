@@ -233,7 +233,6 @@ def nominal_mpc_test(mini_dpin1,
             apm_model.heater_pwm.UPPER = 100
 
             apm_model.temp_sensor = mpc.SV(value=init_temp, name='tc1')
-            apm_model.temp_sensor.STATUS = 0
             apm_model.temp_sensor.FSTATUS = 1.
         apm_model.h = mpc.Intermediate(apm_model.c1
                                        * apm_model.fan_pwm
