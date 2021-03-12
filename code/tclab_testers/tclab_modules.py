@@ -438,7 +438,7 @@ def perfect_mpc_test(mini_dpin1,
                 c.DMAX = max_change
             apm_model.heater_pwm.STATUS = 0
             apm_model.heater_pwm.FSTATUS = 1
-            apm_model.temp_sensor = mhe.CV(value=init_temp, name='tc1')
+            apm_model.temp_sensor = mhe.CV(value=init_temp, name='mhe_tc1')
             apm_model.temp_sensor.STATUS = 1
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
@@ -460,7 +460,7 @@ def perfect_mpc_test(mini_dpin1,
             apm_model.heater_pwm.LOWER = 0
             apm_model.heater_pwm.UPPER = 100
 
-            apm_model.temp_sensor = mpc.SV(value=init_temp, name='tc1')
+            apm_model.temp_sensor = mpc.SV(value=init_temp, name='mpc_tc1')
             apm_model.temp_sensor.FSTATUS = 1.
         apm_model.h = mpc.Intermediate(apm_model.c1
                                        * apm_model.fan_pwm
@@ -489,7 +489,7 @@ def perfect_mpc_test(mini_dpin1,
             apm_model.options.IMODE = 6
         apm_model.options.NODES = 2
         apm_model.options.SOLVER = 3
-        apm_model.options.COLDSTART = 0
+        apm_model.options.COLDSTART = 1
         apm_model.options.AUTO_COLD = 1
 
     print("Starting Perfect MPC with T_lb =  {0} °C".format(temp_lb))
