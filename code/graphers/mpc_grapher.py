@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 test = 'nominal'
-case = 2
+case = 7
 tlb = 36
 
 file_path = "/data/real_{0}_test_case_{1}.csv".format(test,case)

@@ -538,7 +538,7 @@ def perfect_mpc_test(mini_dpin1,
         mhe.fan_pwm.MEAS = current_dist
         mhe.temp_sensor.MEAS = current_temp
         try:
-            mhe.solve(disp=False)
+            mhe.solve()
             oops = False
         except Exception:
             oops = True
@@ -568,7 +568,7 @@ def perfect_mpc_test(mini_dpin1,
         mpc.c3.MEAS = c3s[-1]
         mpc.c4.MEAS = c4s[-1]
         try:
-            mpc.solve(disp=False)
+            mpc.solve()
             if mpc.options.APPSTATUS == 1:
                 # Retrieve new values
                 action = mpc.heater_pwm.NEWVAL / 100
