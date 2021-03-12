@@ -537,6 +537,7 @@ def perfect_mpc_test(mini_dpin1,
         mhe.heater_pwm.MEAS = mini_heater_board.U1
         mhe.fan_pwm.MEAS = current_dist
         mhe.temp_sensor.MEAS = current_temp
+        print('mhe_solve')
         try:
             mhe.solve()
             oops = False
@@ -567,6 +568,7 @@ def perfect_mpc_test(mini_dpin1,
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
         mpc.c4.MEAS = c4s[-1]
+        print('mpc_solve')
         try:
             mpc.solve()
             if mpc.options.APPSTATUS == 1:
