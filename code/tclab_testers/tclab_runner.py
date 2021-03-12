@@ -30,7 +30,7 @@ for trial in trials:
     else:
         test = tcm.perfect_mpc_test
         test_name = 'perfect'
-    file_path = "/data/real_{0}_test_case_{1}.csv".format(test_name,
+    file_path = "/data/real_{0}_test_case_{1}(1).csv".format(test_name,
                                                           trial[1] + 1)
     folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:

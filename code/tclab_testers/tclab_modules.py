@@ -198,14 +198,15 @@ def nominal_mpc_test(mini_dpin1,
         apm_model.c4 = apm_model.FV(value=0.007)
         cs = [apm_model.c1, apm_model.c2, apm_model.c3, apm_model.c4]
 
-        apm_model.fan_pwm = apm_model.MV(value=20)
-        apm_model.fan_pwm.STATUS = 0
-        apm_model.fan_pwm.FSTATUS = 1
+        
 
         apm_model.heater_pwm = mpc.MV(value=0)
         apm_model.temp_heater = mpc.SV(value=init_temp)
 
         if ind == 0:
+            apm_model.fan_pwm = apm_model.MV(value=20)
+            apm_model.fan_pwm.STATUS = 0
+            apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
                 c.STATUS = 0
                 c.FSTATUS = 0
@@ -218,6 +219,9 @@ def nominal_mpc_test(mini_dpin1,
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
         else:
+            apm_model.fan_pwm = apm_model.FV(value=20)
+            apm_model.fan_pwm.STATUS = 0
+            apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
                 c.STATUS = 0
                 c.FSTATUS = 1
@@ -299,7 +303,7 @@ def nominal_mpc_test(mini_dpin1,
         mhe_cs = [mhe.c1, mhe.c2, mhe.c3, mhe.c4]
         mpc_cs = [mpc.c1, mpc.c2, mpc.c3, mpc.c4]
         for ind2, mhe_c in enumerate(mhe_cs):
-            if ind1 % 4*fv_update_rate == ind2*fv_update_rate:
+            if ind1 % (4*fv_update_rate) == ind2*fv_update_rate:
                 mhe_c.STATUS = 1
                 update_counter += 1
                 mhe_c.DMAX = max_change*np.exp(
@@ -416,7 +420,7 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.c4 = apm_model.FV(value=0.007)
         cs = [apm_model.c1, apm_model.c2, apm_model.c3, apm_model.c4]
 
-        apm_model.fan_pwm = apm_model.MV(value=20)
+        apm_model.fan_pwm = apm_model.FV(value=20)
         apm_model.fan_pwm.STATUS = 0
         apm_model.fan_pwm.FSTATUS = 1
 
@@ -424,6 +428,9 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.temp_heater = mpc.SV(value=init_temp)
 
         if ind == 0:
+            apm_model.fan_pwm = apm_model.MV(value=20)
+            apm_model.fan_pwm.STATUS = 0
+            apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
                 c.STATUS = 0
                 c.FSTATUS = 0
@@ -436,6 +443,9 @@ def perfect_mpc_test(mini_dpin1,
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
         else:
+            apm_model.fan_pwm = apm_model.FV(value=20)
+            apm_model.fan_pwm.STATUS = 0
+            apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
                 c.STATUS = 0
                 c.FSTATUS = 1
@@ -517,7 +527,7 @@ def perfect_mpc_test(mini_dpin1,
         mhe_cs = [mhe.c1, mhe.c2, mhe.c3, mhe.c4]
         mpc_cs = [mpc.c1, mpc.c2, mpc.c3, mpc.c4]
         for ind2, mhe_c in enumerate(mhe_cs):
-            if ind1 % 4 * fv_update_rate == ind2 * fv_update_rate:
+            if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
                 mhe_c.STATUS = 1
                 update_counter += 1
                 mhe_c.DMAX = max_change * np.exp(
