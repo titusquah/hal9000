@@ -15,7 +15,9 @@ import pandas as pd
 # content.pop(0)
 
 with open(
-        '../Renewables_Scenario_Gen_GAN-master/datasets/wind.csv',
+        r"C:\Users\tq220\Downloads"
+        r"\Scenario-Forecasts-GAN-master"
+        r"\Scenario-Forecasts-GAN-master\data\real.csv",
         'r') as csvfile:
     reader = csv.reader(csvfile)
     rows = [row for row in reader]
@@ -37,33 +39,35 @@ delta_medians = np.median(delta, axis=0)
 # plt.plot()
 start = 0
 stop = start + 12 * 60
-dists = rows[:, 1]
+dists = rows[:, 0]
 col1_delta_means = []
 col1_delta_medians = []
 counter = 0
 
-median_bar = 4
+median_bar = 0.24
 # median_bar = 0.085
 # median_bar = 0.08
 mean_bar = 2.1
 
 test_cases = {}
-
+plt.close('all')
 while stop < len(rows):
     mini_dist = dists[start:stop]
-    mean = np.mean(mini_dist)
-    median = np.median(mini_dist)
+    delta = np.abs(mini_dist[1:]-mini_dist[:-1])
+    mean = np.mean(delta)
+    median = np.median(delta)
     col1_delta_means.append(mean)
     col1_delta_medians.append(median)
     start = stop
     stop = start + 12 * 60
     if median > median_bar:
         test_cases['case{}'.format(counter+1)] = mini_dist
-        if counter % 9 == 0:
-            if counter != 0:
-                plt.legend()
-                plt.show()
-            plt.figure()
+        # if counter % 9 == 0:
+        #     if counter != 0:
+        #         plt.legend()
+        #         plt.show()
+        #     plt.figure()
+        plt.figure()
         plt.plot(mini_dist, label=counter)
         plt.legend()
         counter += 1
@@ -71,4 +75,5 @@ while stop < len(rows):
 col1_delta_means = np.array(col1_delta_means)
 col1_delta_medians = np.array(col1_delta_medians)
 test_df = pd.DataFrame(test_cases)
-# test_df.to_csv("dist_cases.csv")
+print(len(list(test_df)))
+test_df.to_csv("dist_cases.csv")
