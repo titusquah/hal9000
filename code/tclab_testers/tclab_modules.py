@@ -187,7 +187,7 @@ def nominal_mpc_test(mini_dpin1,
     steepness = 10
     fv_update_rate = 5  # s
     mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
-    mhe = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
+    mhe = GEKKO(name='tclab-mhe', remote=False, server='http://127.0.0.1')
     mpc.time = np.linspace(0, (look_forward - 1) * dt, look_forward)
     mhe.time = np.linspace(0, (look_back - 1) * dt, look_back)
     apm_models = [mhe, mpc]
@@ -409,7 +409,7 @@ def perfect_mpc_test(mini_dpin1,
     d_traj_extend = np.concatenate([d_traj, d_traj])
 
     mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
-    mhe = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
+    mhe = GEKKO(name='tclab-mhe', remote=False, server='http://127.0.0.1')
     mpc.time = np.linspace(0, (look_forward - 1) * dt, look_forward)
     mhe.time = np.linspace(0, (look_back - 1) * dt, look_back)
     apm_models = [mhe, mpc]
@@ -570,6 +570,7 @@ def perfect_mpc_test(mini_dpin1,
         mpc.c4.MEAS = c4s[-1]
         print('mpc_solve')
         try:
+            print('mpc_solve1')
             mpc.solve()
             if mpc.options.APPSTATUS == 1:
                 # Retrieve new values

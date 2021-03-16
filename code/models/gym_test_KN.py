@@ -10,7 +10,7 @@ file_path = r"C:\Users\kervi\Downloads\test4_big_fan.csv"
 df = pd.read_csv(file_path)
 
 start = 0
-stop = 6001
+stop = len(df.temp)
 d_traj = df.fan_pwm[start:stop] * 100
 
 # d_traj = np.ones(len(d_traj)) * 100
@@ -21,7 +21,7 @@ def parameters(y,c1a,c2a,c3a,c4a):
 	model = bb_process(initial_temp=297.6, #22,
 	                   amb_temp=297.6, #22,
 	                   dt=0.155,
-	                   max_time=6000,
+	                   max_time=stop-1,
 	                   d_traj=d_traj,
 	                   temp_lb=min(df.temp),#296.15,
 					   c1=c1a,
@@ -59,7 +59,7 @@ def parameters2(y,c1a,c2a,c3a,c4a):
 	model = bb_process2(initial_temp=297.6, #22,
                    amb_temp=297.6, #22,
                    dt=0.155,
-                   max_time=6000,
+                   max_time=stop,
                    d_traj=d_traj,
                    temp_lb=min(df.temp),#296.15,
 				   c1=c1a,
@@ -172,7 +172,7 @@ while R2<0.99 or i<10000:
 model = bb_process(initial_temp=297.6,#296.15,
 	                   amb_temp=297.6,#296.15,
 	                   dt=0.155,
-	                   max_time=6000,
+	                   max_time=stop-1,
 	                   d_traj=d_traj,
 	                   temp_lb=min(df.temp),#296.15,
 					   c1=params1[0][0],
@@ -214,6 +214,7 @@ ax[0].legend(['Heater'], loc='best')
 
 ax[1].plot(t, states[:, 0], 'b-', linewidth=3, label=r'$T_c$')
 ax[1].plot(t, states[:, 1], 'r--', linewidth=3, label=r'$T_h$')
+#ax[1].plot(t,states[:,0], 'k-', linewidth=3, label="Model")
 ax[1].set_ylabel(r'Temperature (C)')
 ax[1].legend(loc='best')
 
