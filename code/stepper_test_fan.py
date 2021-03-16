@@ -19,7 +19,7 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = "/data/step_test_no_fan_50(2).csv"
+file_path = "/data/step_test_no_fan_50(hmm).csv"
 
 # Connect to Arduino
 heater_board = TCLab(port='4')
@@ -45,8 +45,9 @@ heater_pwms = np.concatenate((np.ones(steps_per_second * 5),
 fan_pwms=np.concatenate((np.zeros(steps_per_second * 5),
                               np.ones(steps_per_second * 2400),
                               np.zeros(steps_per_second * 2400))) * 0.5
-
-
+pntxt2 = "d:{}:o".format(3)
+dpin = board.get_pin(pntxt2)
+dpin.mode = 3
 n = len(heater_pwms)
 try:
     for i in range(1, n):
@@ -68,8 +69,8 @@ try:
 
         # Write new heater values (0-100)
         #pntxt2 = "d:{}:o".format(3)
-        dpin1 = board.get_pin(fan_pwms[i])
-        dpin1.mode = 3
+#        dpin = board.get_pin(fan_pwms[i])
+#        dpin.mode = 3
         heater_board.Q1(heater_pwms[i])
 
         if i % 30 == 0:

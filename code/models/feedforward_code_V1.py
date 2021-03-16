@@ -114,8 +114,8 @@ def objective(x):
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = 2.0 # Km
-x0[1] = 3.0 # taum
+x0[0] = -.100 # Km
+x0[1] = 300.0 # taum
 x0[2] = 0.0 # thetam
 
 # show initial objective
@@ -220,8 +220,8 @@ uf = interp1d(t,u)
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = 2.0 # Km
-x0[1] = 3.0 # taum
+x0[0] = .100 # Km
+x0[1] = 300.0 # taum
 x0[2] = 0.0 # thetam
 
 # show initial objective
@@ -232,7 +232,7 @@ print('Initial SSE Objective: ' + str(objective(x0)))
 
 # Another way to solve: with bounds on variables
 bnds = ((-10000, 50000), (-10000, 10000.0), (-10000.0, 10000.0))
-solution = minimize(objective,x0,bounds=bnds,method='SLSQP')
+solution = minimize(objective,x0,bounds=bnds,method='L-BFGS-B')
 x1 = solution.x
 
 # show final objective
@@ -278,7 +278,7 @@ lag=x1[1]
 #it = pyfirmata.util.Iterator(board)
 #it.start()
 #
-tf = ns           # final time
+tf = 1000         # final time
 n = int(tf + 1) # number of time points
 
 # time span for the simulation, cycle every 1 sec
@@ -300,7 +300,7 @@ valve = data1['heater_pwm'][0]
 # Controller bias
 ubias = valve
 # valve opening (0-100%)
-u = np.ones(n) * valve
+u1 = np.ones(n) * valve
 
 Cv = 0.0001     # valve size
 rho = 1000.0 # water density (kg/m^3)
@@ -361,9 +361,12 @@ steps_per_second = int(1 / sleep_max)
 #                              np.zeros(steps_per_second * 2400))) * 0.5
 
 
-n = len(data2['case1']*5)
-d_traj=get_d_traj(data2['case1'],5)
-
+#n = len(data2['case1'])*tf
+d_traj=get_d_traj(0,5)
+pntxt2 = "d:{}:o".format(3)
+dpin = board.get_pin(pntxt2)
+dpin.mode = 3
+j=0
 try:
     for i in range(1, n):
         # Sleep time
@@ -384,12 +387,17 @@ try:
 
         # Write new heater values (0-100)
         #pntxt2 = "d:{}:o".format(3)
-        dpin1 = board.get_pin(fan_pwms[i])
-        dpin1.mode = 3
+#        dpin = board.get_pin(fan_pwms[i])
+#        dpin.mode = 3
         
         
         # inlet pressure (bar) disturbance
-        DP[i] = data2['case1'][i]
+        if i&tf==0:
+            
+            DP[i] = data2['case1'][j]
+            j+=1
+        else:
+            DP[i] = data2['case1'][j]
     
         # inlet mass flow
         Fin[i] = DP[i]
@@ -402,7 +410,7 @@ try:
         else:
             if i>=1:
                 Fout[i] = Fout[i-1]
-    
+        dpin.write(Fout[i])
         # PI controller
         # calculate the error
         error = SP - Level0
@@ -420,13 +428,13 @@ try:
             valve = 0.0
             ie[i] = ie[i] - error * delta_t # anti-reset windup
         
-        u[i+1] = valve   # store the valve position
+        u1[i] = valve   # store the valve position
         heater_board.Q1(valve)
 
         if i % 30 == 0:
             df = pd.DataFrame({'time': times,
                                'temp': temps,
-                               'heater_pwm': u[0:i],
+                               'heater_pwm': u1[0:i],
                                 'fan_pwm':DP[0:i]})
             df.to_csv(box_folder_path + file_path)
 
@@ -434,7 +442,7 @@ try:
     heater_board.Q1(0)
     heater_board.Q2(0)
     dpin.write(1)
-    heater_board.close()
+#    heater_board.close()
     i=0
     while i<1000:
         if heater_board.T1!=temps[0]:
@@ -447,11 +455,13 @@ try:
 
 
     df = pd.DataFrame({'time': times,
-                       'temp': temps,
-                       'heater_pwm': heater_pwms[0:i]})
+                               'temp': temps,
+                               'heater_pwm': u1[0:i],
+                                'fan_pwm':DP[0:i]})
     df.to_csv(box_folder_path + file_path)
-
-
+#plt.figure(3)
+#plt.plot(df['time'],df['temp'],'r--',linewidth=3,label='valve')
+#plt.ylabel('Valve') 
 
 # Allow user to end loop with Ctrl-C
 except KeyboardInterrupt:
@@ -461,10 +471,10 @@ except KeyboardInterrupt:
     print('Shutting down')
     heater_board.close()
     dpin.write(0)
-    board.close()
+    board.exit()
     df = pd.DataFrame({'time': times,
                                'temp': temps,
-                               'heater_pwm': u[0:i],
+                               'heater_pwm': u1[0:i],
                                 'fan_pwm':DP[0:i]})
     df.to_csv(box_folder_path + file_path)
 
@@ -477,10 +487,10 @@ except:
     print('Error: Shutting down')
     heater_board.close()
     dpin.write(0)
-    board.close()
+    board.exit()
     df = pd.DataFrame({'time': times,
                                'temp': temps,
-                               'heater_pwm': u[0:i],
+                               'heater_pwm': u1[0:i],
                                 'fan_pwm':DP[0:i]})
     df.to_csv(box_folder_path + file_path)
     raise
@@ -568,7 +578,7 @@ plt.figure(3)
 #plt.ylabel('Tank Level')
 #plt.legend(loc=1)
 #plt.subplot(4,1,2)
-plt.plot(ts,u,'r--',linewidth=3,label='valve')
+plt.plot(df['time'],df['temp'],'r--',linewidth=3,label='valve')
 plt.ylabel('Valve')    
 #plt.legend(loc=1)
 #plt.subplot(4,1,3)
