@@ -568,9 +568,9 @@ def perfect_mpc_test(mini_dpin1,
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
         mpc.c4.MEAS = c4s[-1]
-        print('mpc_solve')
         try:
             print('mpc_solve1')
+            print(mpc.heater_pwm.NEWVAL)
             mpc.solve()
             if mpc.options.APPSTATUS == 1:
                 # Retrieve new values

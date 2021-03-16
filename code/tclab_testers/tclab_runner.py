@@ -39,20 +39,20 @@ for trial in trials:
     box_folder_path = content[0]
     total_file_path = box_folder_path + file_path
     
-    try:
-        test(dpin1,
-             heater_board,
-             tlb,
-             d_traj,
-             amb_temp,
-             init_temp,
-             file_path=None,
-             dt=1,
-             look_back=11,
-             look_forward=51,
-             )
-    except:
-        break
+#    try:
+#        test(dpin1,
+#             heater_board,
+#             tlb,
+#             d_traj,
+#             amb_temp,
+#             init_temp,
+#             file_path=None,
+#             dt=1,
+#             look_back=11,
+#             look_forward=51,
+#             )
+#    except:
+#        break
 
     temp_sp = None
     times1, temps1, heater_pwms1, fan_pwms1 = tcm.fan_cooling(dpin1,
@@ -71,6 +71,7 @@ for trial in trials:
                                                                    hold_time)
     init_temp = temps1[-1]
     d_traj = tcm.get_d_traj(trial[1])
+    total_file_path = None
     try:
         test(dpin1,
              heater_board,

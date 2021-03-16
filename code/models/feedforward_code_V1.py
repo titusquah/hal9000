@@ -21,6 +21,9 @@ from scipy.integrate import odeint
 import random
 from fan_tclab_gym import FanTempControlLabBlackBox as bb_process
 from utils import get_d_traj
+import time
+from tclab import TCLab
+import pyfirmata
 
 
 
@@ -29,9 +32,9 @@ from utils import get_d_traj
 # Column 2 = input (u)
 # Column 3 = output (yp)
 #################### File Paths
-url = r"C:\Users\kervi\Downloads\step_test_fan_50_3.csv"   #Heater File
-url1= r"C:\Users\kervi\Downloads\step_test_fan_50_2.csv"   #Disturbance File
-url2 = r"C:\Users\kervi\Downloads\dist_cases.csv"           # Disturbance Case File
+url = r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_heater_1.csv"   #Heater File
+url1= r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_5.csv"   #Disturbance File
+url2 = r"C:\Users\Tony\Box\hal9000_box_folder\data\dist_cases(1).csv"           # Disturbance Case File
 
 
 data = pd.read_csv(url)
@@ -325,7 +328,7 @@ c3a=0.26458722910810484
 c4a=0.007265841148016536
 # simulate with ODEINT
 
-folder_path_txt = "hidden/box_folder_path.txt"
+folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
@@ -358,7 +361,7 @@ steps_per_second = int(1 / sleep_max)
 #                              np.zeros(steps_per_second * 2400))) * 0.5
 
 
-n = len(heater_pwms)
+n = len(data2['case1']*5)
 d_traj=get_d_traj(data2['case1'],5)
 
 try:
@@ -383,41 +386,41 @@ try:
         #pntxt2 = "d:{}:o".format(3)
         dpin1 = board.get_pin(fan_pwms[i])
         dpin1.mode = 3
-		
-		
-	    # inlet pressure (bar) disturbance
-	    DP[i] = data2['case1'][i]
-	
-	    # inlet mass flow
-	    Fin[i] = DP[i]
-	
-	    # outlet flow (kg/sec) disturbance (change every 10 seconds)
-	    if np.mod(i+1,500)==100:
-	        Fout[i] = Fout[i-1] + 10.0
-	    elif np.mod(i+1,500)==350:
-	        Fout[i] = Fout[i-1] - 10.0
-	    else:
-	        if i>=1:
-	            Fout[i] = Fout[i-1]
-	
-	    # PI controller
-	    # calculate the error
-	    error = SP - Level0
-	    P[i] = Kc * error
-	    if i >= 1:  # calculate starting on second cycle
-	        ie[i] = ie[i-1] + error * delta_t
-	        I[i] = (Kc/tauI) * ie[i]
-	    valve = ubias + P[i] + I[i] + kff * (Fout[i]-Fout[0])
-	    valve = max(0.0,valve)   # lower bound = 0
-	    valve = min(100.0,valve) # upper bound = 100
-	    if valve > 100.0:  # check upper limit
-	        valve = 100.0
-	        ie[i] = ie[i] - error * delta_t # anti-reset windup
-	    if valve < 0.0:    # check lower limit
-	        valve = 0.0
-	        ie[i] = ie[i] - error * delta_t # anti-reset windup
-		
-		u[i+1] = valve   # store the valve position
+        
+        
+        # inlet pressure (bar) disturbance
+        DP[i] = data2['case1'][i]
+    
+        # inlet mass flow
+        Fin[i] = DP[i]
+    
+        # outlet flow (kg/sec) disturbance (change every 10 seconds)
+        if np.mod(i+1,500)==100:
+            Fout[i] = Fout[i-1] + 10.0
+        elif np.mod(i+1,500)==350:
+            Fout[i] = Fout[i-1] - 10.0
+        else:
+            if i>=1:
+                Fout[i] = Fout[i-1]
+    
+        # PI controller
+        # calculate the error
+        error = SP - Level0
+        P[i] = Kc * error
+        if i >= 1:  # calculate starting on second cycle
+            ie[i] = ie[i-1] + error * delta_t
+            I[i] = (Kc/tauI) * ie[i]
+        valve = ubias + P[i] + I[i] + kff * (Fout[i]-Fout[0])
+        valve = max(0.0,valve)   # lower bound = 0
+        valve = min(100.0,valve) # upper bound = 100
+        if valve > 100.0:  # check upper limit
+            valve = 100.0
+            ie[i] = ie[i] - error * delta_t # anti-reset windup
+        if valve < 0.0:    # check lower limit
+            valve = 0.0
+            ie[i] = ie[i] - error * delta_t # anti-reset windup
+        
+        u[i+1] = valve   # store the valve position
         heater_board.Q1(valve)
 
         if i % 30 == 0:
@@ -558,15 +561,15 @@ for i in range(n-1):
 #ie[n-1] = ie[n-2]
 '''
 # plot results
-#plt.figure()
+plt.figure(3)
 #plt.subplot(4,1,1)
 #plt.plot(ts,z,'b-',linewidth=3,label='level')
 #plt.plot([0,max(ts)],[SP,SP],'k--',linewidth=2,label='set point')
 #plt.ylabel('Tank Level')
 #plt.legend(loc=1)
 #plt.subplot(4,1,2)
-#plt.plot(ts,u,'r--',linewidth=3,label='valve')
-#plt.ylabel('Valve')    
+plt.plot(ts,u,'r--',linewidth=3,label='valve')
+plt.ylabel('Valve')    
 #plt.legend(loc=1)
 #plt.subplot(4,1,3)
 #plt.plot(ts,es,'k:',linewidth=3,label='error')
