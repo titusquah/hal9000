@@ -200,8 +200,8 @@ def nominal_mpc_test(mini_dpin1,
 
         
 
-        apm_model.heater_pwm = mpc.MV(value=0)
-        apm_model.temp_heater = mpc.SV(value=init_temp)
+        apm_model.heater_pwm = apm_model.MV(value=0)
+        apm_model.temp_heater = apm_model.SV(value=init_temp)
 
         if ind == 0:
             apm_model.fan_pwm = apm_model.MV(value=20)
@@ -214,7 +214,7 @@ def nominal_mpc_test(mini_dpin1,
                 c.DMAX = max_change
             apm_model.heater_pwm.STATUS = 0
             apm_model.heater_pwm.FSTATUS = 1
-            apm_model.temp_sensor = mhe.CV(value=init_temp, name='tc1')
+            apm_model.temp_sensor = apm_model.CV(value=init_temp, name='tc1')
             apm_model.temp_sensor.STATUS = 1
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
@@ -225,9 +225,9 @@ def nominal_mpc_test(mini_dpin1,
             for c in cs:
                 c.STATUS = 0
                 c.FSTATUS = 1
-            p = np.zeros(len(mpc.time))
+            p = np.zeros(len(apm_model.time))
             p[-1] = 1.0
-            apm_model.final = mpc.Param(value=p)
+            apm_model.final = apm_model.Param(value=p)
 
             apm_model.heater_pwm.STATUS = 1
             apm_model.heater_pwm.FSTATUS = 0.
@@ -236,9 +236,9 @@ def nominal_mpc_test(mini_dpin1,
             apm_model.heater_pwm.LOWER = 0
             apm_model.heater_pwm.UPPER = 100
 
-            apm_model.temp_sensor = mpc.SV(value=init_temp, name='tc1')
+            apm_model.temp_sensor =apm_model.SV(value=init_temp, name='tc1')
             apm_model.temp_sensor.FSTATUS = 1.
-        apm_model.h = mpc.Intermediate(apm_model.c1
+        apm_model.h = apm_model.Intermediate(apm_model.c1
                                        * apm_model.fan_pwm
                                        ** (apm_model.c2 - 1))
         apm_model.Equation(apm_model.temp_heater.dt()
@@ -424,8 +424,8 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.fan_pwm.STATUS = 0
         apm_model.fan_pwm.FSTATUS = 1
 
-        apm_model.heater_pwm = mpc.MV(value=0)
-        apm_model.temp_heater = mpc.SV(value=init_temp)
+        apm_model.heater_pwm = apm_model.MV(value=0)
+        apm_model.temp_heater = apm_model.SV(value=init_temp)
 
         if ind == 0:
             apm_model.fan_pwm = apm_model.MV(value=20)
@@ -438,7 +438,7 @@ def perfect_mpc_test(mini_dpin1,
                 c.DMAX = max_change
             apm_model.heater_pwm.STATUS = 0
             apm_model.heater_pwm.FSTATUS = 1
-            apm_model.temp_sensor = mhe.CV(value=init_temp, name='mhe_tc1')
+            apm_model.temp_sensor = apm_model.CV(value=init_temp, name='mhe_tc1')
             apm_model.temp_sensor.STATUS = 1
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
@@ -449,9 +449,9 @@ def perfect_mpc_test(mini_dpin1,
             for c in cs:
                 c.STATUS = 0
                 c.FSTATUS = 1
-            p = np.zeros(len(mpc.time))
+            p = np.zeros(len(apm_model.time))
             p[-1] = 1.0
-            apm_model.final = mpc.Param(value=p)
+            apm_model.final = apm_model.Param(value=p)
 
             apm_model.heater_pwm.STATUS = 1
             apm_model.heater_pwm.FSTATUS = 0.
@@ -460,9 +460,9 @@ def perfect_mpc_test(mini_dpin1,
             apm_model.heater_pwm.LOWER = 0
             apm_model.heater_pwm.UPPER = 100
 
-            apm_model.temp_sensor = mpc.SV(value=init_temp, name='mpc_tc1')
+            apm_model.temp_sensor = apm_model.SV(value=init_temp, name='mpc_tc1')
             apm_model.temp_sensor.FSTATUS = 1.
-        apm_model.h = mpc.Intermediate(apm_model.c1
+        apm_model.h = apm_model.Intermediate(apm_model.c1
                                        * apm_model.fan_pwm
                                        ** (apm_model.c2 - 1))
         apm_model.Equation(apm_model.temp_heater.dt()
