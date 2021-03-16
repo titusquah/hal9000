@@ -2,8 +2,8 @@ from gekko import GEKKO
 import numpy as np
 import fan_tclab_gym as ftg
 import matplotlib.pyplot as plt
-import pandas as pd
 from utils import get_d_traj
+import pandas as pd
 
 n_steps = 401
 c1 = 0.00464991
@@ -11,10 +11,12 @@ c2 = 0.801088
 c3 = 0.0251691
 c4 = 0.0184281
 # c4 = 0.1
+
 amb_temp = 23 + 273.15
 temp_lb1 = amb_temp + 13  # K
 initial_temp = temp_lb1 + 1
 dt = 1
+
 d_traj = np.ones(n_steps) * 20
 d_traj = np.sin(np.linspace(0, 100, n_steps) / 10) * 40 + 60
 step_20 = np.ones(100) * 20
@@ -23,7 +25,7 @@ hi = np.array([20])
 mini_list = [hi]
 counter = 1
 ind1 = 0
-while counter < n_steps:
+while counter < n_steps * 2:
     if ind1 % 2 == 0:
         mini_list.append(step_20)
     else:
@@ -31,22 +33,26 @@ while counter < n_steps:
     ind1 += 1
     counter += 100
 d_traj = np.concatenate(mini_list)
-
+# d_traj_extend = np.concatenate([d_traj, np.ones(len(d_traj)) * d_traj[-1]])
 for case in range(7):
     c1 = 0.00464991
     c2 = 0.801088
     c3 = 0.0251691
     c4 = 0.0184281
+    # c4 = 0.1
+    
     amb_temp = 23 + 273.15
     temp_lb1 = amb_temp + 13  # K
     initial_temp = temp_lb1 + 1
     dt = 1
-    d_traj = get_d_traj(case, 5)
+    d_traj = get_d_traj(case,5)
     n_steps = len(d_traj)
     
     log_barrier_tau = 0.5
     penalty_scale = 1e5
     steepness = 10
+    
+    horizon = 50
     
     env = ftg.FanTempControlLabBlackBox(initial_temp=initial_temp,
                                         amb_temp=amb_temp,
@@ -59,7 +65,7 @@ for case in range(7):
                                         c3=c3,
                                         c4=c4)
     mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
-    mpc.time = np.linspace(0, 50, 51)
+    mpc.time = np.linspace(0, horizon, horizon + 1)
     c1 = mpc.Param(value=c1)
     c2 = mpc.Param(value=c2)
     c3 = mpc.Param(value=c3)
@@ -127,13 +133,15 @@ for case in range(7):
         if ind1 % 50 == 0:
             print(ind1)
         temp_sensor.MEAS = state[0]
-        fan_pwm.MEAS = info['dist']
+    
+        fan_pwm.VALUE = d_traj[ind1:ind1 + horizon + 1]
+    
         try:
             mpc.solve(disp=False)
             if mpc.options.APPSTATUS == 1:
                 # Retrieve new values
                 action = heater_pwm.NEWVAL / 100
-            #            print(heater_pwm.VALUE)
+    
             else:
                 action = 1
         except Exception as e:
@@ -142,27 +150,27 @@ for case in range(7):
         ind1 += 1
     states = np.array(states) - 273.15
     t = np.linspace(0, len(states) * dt+dt, len(states))
-#    fig, ax = plt.subplots(3, figsize=(10, 7))
-#    ax[0].plot(t, actions, 'b--', linewidth=3)
-#    
-#    ax[0].set_ylabel('PWM %')
-#    ax[0].legend(['Heater'], loc='best')
-#    
-#    ax[1].plot(t, states[:, 0], 'b-', linewidth=3, label=r'$T_c$')
-#    ax[1].plot(t, states[:, 1], 'r--', linewidth=3, label=r'$T_h$')
-#    ax[1].axhline(temp_lb1 - 273.15,
-#                  color='b', linestyle='--', linewidth=3, label=r'$T_{lb}$')
-#    ax[1].set_ylabel(r'Temperature (K)')
-#    ax[1].legend(loc='best')
-#    
-#    ax[2].plot(t, dists, 'b-', linewidth=3, label=r'Fan',
-#               alpha=0.5)
-#    # ax[2].plot(t, d_traj, 'b-', linewidth=3, label=r'Fan',
-#    #           alpha=0.5)
-#    ax[2].set_ylabel('PWM %')
-#    ax[2].set_xlabel('Time (min)')
-#    ax[2].legend(loc='best')
-#    plt.show()
+    fig, ax = plt.subplots(3, figsize=(10, 7))
+    ax[0].plot(t, actions, 'b--', linewidth=3)
+    
+    ax[0].set_ylabel('PWM %')
+    ax[0].legend(['Heater'], loc='best')
+    
+    ax[1].plot(t, states[:, 0], 'b-', linewidth=3, label=r'$T_c$')
+    ax[1].plot(t, states[:, 1], 'r--', linewidth=3, label=r'$T_h$')
+    ax[1].axhline(temp_lb1 - 273.15,
+                  color='b', linestyle='--', linewidth=3, label=r'$T_{lb}$')
+    ax[1].set_ylabel(r'Temperature (K)')
+    ax[1].legend(loc='best')
+    
+    ax[2].plot(t, dists, 'b-', linewidth=3, label=r'Fan',
+               alpha=0.5)
+    # ax[2].plot(t, d_traj, 'b-', linewidth=3, label=r'Fan',
+    #           alpha=0.5)
+    ax[2].set_ylabel('PWM %')
+    ax[2].set_xlabel('Time (min)')
+    ax[2].legend(loc='best')
+    plt.show()
     
     folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:
@@ -171,7 +179,7 @@ for case in range(7):
     box_folder_path = content[0]
     
     save_file = (box_folder_path
-                 + '/data/simulated_nominal_mpc_case_{}.csv'.format(case+1))
+                 + '/data/simulated_perfect_mpc_case_{}.csv'.format(case))
     data_dict = {'time': t,
                  'temp_sensor': states[:, 0],
                  'temp_heater': states[:, 1],

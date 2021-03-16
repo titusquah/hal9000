@@ -3,8 +3,9 @@ import time
 from tclab import TCLab
 import pyfirmata
 import pandas as pd
-from tclab_modules import fan_cooling, set_initial_temp
+import tclab_modules as tcm
 import matplotlib.pyplot as plt
+import itertools
 
 # Connect to Arduino
 heater_board = TCLab(port='4')
@@ -16,98 +17,74 @@ it.start()
 pntxt2 = "d:{}:o".format(3)
 dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
-times, temps, heater_pwms, fan_pwms = [], [], [], []
 
-file_path = "/data/pid_test(6).csv"
-folder_path_txt = "../hidden/box_folder_path.txt"
-with open(folder_path_txt) as f:
-    content = f.readlines()
-content = [x.strip() for x in content]
-box_folder_path = content[0]
-total_file_path = box_folder_path + file_path
+tlb = 36  # °C
+a1 = [0, 1]
+a2 = np.arange(7)
+trials = np.array(list(itertools.product(*[a1, a2])))
+np.random.shuffle(trials)
+for trial in trials:
+    if trial[0] == 0:
+        test = tcm.nominal_mpc_test
+        test_name = 'nominal'
+    else:
+        test = tcm.perfect_mpc_test
+        test_name = 'perfect'
+    file_path = "/data/real_{0}_test_case_{1}(2).csv".format(test_name,
+                                                          trial[1] + 1)
+    folder_path_txt = "../hidden/box_folder_path.txt"
+    with open(folder_path_txt) as f:
+        content = f.readlines()
+    content = [x.strip() for x in content]
+    box_folder_path = content[0]
+    total_file_path = box_folder_path + file_path
+    
+#    try:
+#        test(dpin1,
+#             heater_board,
+#             tlb,
+#             d_traj,
+#             amb_temp,
+#             init_temp,
+#             file_path=None,
+#             dt=1,
+#             look_back=11,
+#             look_forward=51,
+#             )
+#    except:
+#        break
 
-temp_sp = None
-times1, temps1, heater_pwms1, fan_pwms1 = fan_cooling(dpin1,
-                                             heater_board,
-                                             temp_sp)
-times.extend(times1)
-temps.extend(temps1)
-heater_pwms.extend(heater_pwms1)
-fan_pwms.extend(fan_pwms1)
+    temp_sp = None
+    times1, temps1, heater_pwms1, fan_pwms1 = tcm.fan_cooling(dpin1,
+                                                              heater_board,
+                                                              temp_sp=None)
 
-temp_sp = 40
-tol = 0.2
-hold_time = 30
-times1, temps1, heater_pwms1, fan_pwms1 = set_initial_temp(dpin1,
-                                             heater_board,
-                                             temp_sp,
-                                             tol,
-                                             hold_time,
-                                             file_path=total_file_path)
-times1 = np.array(times1)
-times1 = times1 + times[-1]
-times.extend(times1)
-temps.extend(temps1)
-heater_pwms.extend(heater_pwms1)
-fan_pwms.extend(fan_pwms1)
+    amb_temp = min(temps1)
 
-
-
-temp_sp = 35
-times1, temps1, heater_pwms1, fan_pwms1 = fan_cooling(dpin1,
-                                             heater_board,
-                                             temp_sp)
-times1 = np.array(times1)
-times1 = times1 + times[-1]
-times.extend(times1)
-temps.extend(temps1)
-heater_pwms.extend(heater_pwms1)
-fan_pwms.extend(fan_pwms1)
-
-temp_sp = 50
-file_path = "/data/pid_test(7).csv"
-total_file_path = box_folder_path + file_path
-times1, temps1, heater_pwms1, fan_pwms1 = set_initial_temp(dpin1,
-                                             heater_board,
-                                             temp_sp,
-                                             tol,
-                                             hold_time,
-                                             file_path=total_file_path)
-times1 = np.array(times1)
-times1 = times1 + times[-1]
-times.extend(times1)
-temps.extend(temps1)
-heater_pwms.extend(heater_pwms1)
-fan_pwms.extend(fan_pwms1)
-
-temp_sp = None
-times1, temps1, heater_pwms1, fan_pwms1 = fan_cooling(dpin1,
-                                             heater_board,
-                                             temp_sp)
-times1 = np.array(times1)
-times1 = times1 + times[-1]
-times.extend(times1)
-temps.extend(temps1)
-heater_pwms.extend(heater_pwms1)
-fan_pwms.extend(fan_pwms1)
-
-heater_board.Q1(0)
-heater_board.Q2(0)
-dpin1.write(0)
-print('Shutting down')
+    temp_sp = tlb + 1
+    tol = 0.2
+    hold_time = 20
+    times1, temps1, heater_pwms1, fan_pwms1 = tcm.set_initial_temp(dpin1,
+                                                                   heater_board,
+                                                                   temp_sp,
+                                                                   tol,
+                                                                   hold_time)
+    init_temp = temps1[-1]
+    d_traj = tcm.get_d_traj(trial[1])
+    try:
+        test(dpin1,
+             heater_board,
+             tlb,
+             d_traj,
+             amb_temp,
+             init_temp,
+             file_path=total_file_path,
+             dt=1,
+             look_back=11,
+             look_forward=51,
+             )
+    except:
+        break
+tcm.fan_cooling(dpin1,heater_board,temp_sp=None)
 heater_board.close()
 fan_board.exit()
-
-
-df = pd.DataFrame({'time': times,
-                   'temp': temps,
-                   'heater_pwm': heater_pwms,
-                   'fan_pwm': fan_pwms})
-file_path="/data/heating_cooling(2).csv"
-total_file_path3 = box_folder_path + file_path
-df.to_csv(total_file_path)
-
-
-
-
-
