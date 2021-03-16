@@ -19,7 +19,7 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 tlb = 36  # °C
-a1 = [1]
+a1 = [0, 1]
 a2 = np.arange(7)
 trials = np.array(list(itertools.product(*[a1, a2])))
 np.random.shuffle(trials)
@@ -71,7 +71,6 @@ for trial in trials:
                                                                    hold_time)
     init_temp = temps1[-1]
     d_traj = tcm.get_d_traj(trial[1])
-    total_file_path = None
     try:
         test(dpin1,
              heater_board,
