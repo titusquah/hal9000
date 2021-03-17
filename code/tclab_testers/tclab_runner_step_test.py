@@ -34,21 +34,6 @@ content = [x.strip() for x in content]
 box_folder_path = content[0]
 total_file_path = box_folder_path + file_path
 
-#    try:
-#        test(dpin1,
-#             heater_board,
-#             tlb,
-#             d_traj,
-#             amb_temp,
-#             init_temp,
-#             file_path=None,
-#             dt=1,
-#             look_back=11,
-#             look_forward=51,
-#             )
-#    except:
-#        break
-
 temp_sp = None
 times1, temps1, heater_pwms1, fan_pwms1 = tcm.fan_cooling(dpin1,
                                                           heater_board,
@@ -91,13 +76,13 @@ try:
          dt=1,
          look_back=31,
          look_forward=51,
-         c1=0.35,
-         c2=1.12,
-         c3=0.25,
-         c4=0.0071,
+         c1=0.00088341,
+         c2=0.801088,
+         c3=0.00388592,
+         c4=1,
          )
 except:
     pass
-tcm.fan_cooling(dpin1,heater_board,temp_sp=None)
+tcm.fan_cooling(dpin1, heater_board, temp_sp=None)
 heater_board.close()
 fan_board.exit()
