@@ -585,7 +585,7 @@ def perfect_mpc_test(mini_dpin1,
             c4s.append(mhe.c4.NEWVAL)
 
         mpc.temp_sensor.MEAS = current_temp
-        mpc.fan_pwm.VALUE = d_traj_extend[ind1:ind1 + look_forward]
+        mpc.fan_pwm.VALUE = d_traj_extend[ind1:ind1 + look_forward]/100
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]

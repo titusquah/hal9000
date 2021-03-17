@@ -12,7 +12,7 @@ box_folder_path = content[0]
 file_path = '/data/mhe_test_{0}_{1}(4).csv'.format(start, stop)
 df = pd.read_csv(box_folder_path + file_path)
 
-mini_start = 20000
+mini_start = 0
 mini_stop = stop
 fig, ax = plt.subplots(2)
 ax[0].plot(df.time[mini_start:mini_stop],

@@ -22,11 +22,12 @@ dt = 0.155
 max_change = 0.8
 min_change = 0.02
 decay_rate = 0.005
+max_rel_change = 0.1
 
 start = 0
-stop = len(df)
-lookback_time = 10  # s
-save_file = box_folder_path + '/data/mhe_test_{0}_{1}(4).csv'.format(start, stop)
+stop = 12001
+lookback_time = 20  # s
+save_file = box_folder_path + '/data/mhe_test_{0}_{1}(5).csv'.format(start, stop)
 
 initial_temp = df['temp'][0] #+ 273.15
 amb_temp = df['temp'][0] #+ 273.15
@@ -39,11 +40,11 @@ c3 = mhe.FV(value=c3)
 c4 = mhe.FV(value=c4)
 cs = [c1, c2, c3, c4]
 
-for c in cs:
+for ind, c in enumerate(cs):
     c.STATUS = 0
     c.FSTATUS = 0
     c.LOWER = 0
-    c.DMAX = max_change
+    c.DMAX = init_cs[ind]*max_rel_change
 
 fan_pwm = mhe.MV(value=20)
 fan_pwm.STATUS = 0

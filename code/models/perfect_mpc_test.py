@@ -34,18 +34,18 @@ while counter < n_steps * 2:
     counter += 100
 d_traj = np.concatenate(mini_list)
 # d_traj_extend = np.concatenate([d_traj, np.ones(len(d_traj)) * d_traj[-1]])
-for case in range(7):
-    c1 = 0.39
-    c2 = 1.18
-    c3 = 0.26
-    c4 = 0.007
+for case in range(1):
+    c1 = 0.35
+    c2 = 1.12
+    c3 = 0.25
+    c4 = 0.0071
     # c4 = 0.1
 
     amb_temp = 23 + 273.15
     temp_lb1 = amb_temp + 13  # K
     initial_temp = temp_lb1 + 1
     dt = 1
-    d_traj = get_d_traj(case, 5)
+    d_traj = get_d_traj(case, 5)/100
     n_steps = len(d_traj)
 
     log_barrier_tau = 0.5
@@ -179,7 +179,7 @@ for case in range(7):
     box_folder_path = content[0]
 
     save_file = (box_folder_path
-                 + '/data/simulated_perfect_mpc_case_{}(1).csv'.format(case))
+                 + '/data/simulated_perfect_mpc_case_{}(2).csv'.format(case))
     data_dict = {'time': t,
                  'temp_sensor': states[:, 0],
                  'temp_heater': states[:, 1],
