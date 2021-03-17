@@ -12,7 +12,7 @@ box_folder_path = content[0]
 file_path = "/data/test4_big_fan.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
-start = 6000+6000
+start = 6000+6000+6000+6000
 stop = start+6001
 d_traj = df.fan_pwm[start:stop] * 100
 d_traj = d_traj.values

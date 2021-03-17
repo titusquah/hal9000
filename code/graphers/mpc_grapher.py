@@ -1,11 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-test = 'nominal'
-case = 7
+test = 'perfect'
+case = 6
 tlb = 36
 
-file_path = "/data/real_{0}_test_case_{1}.csv".format(test,case)
+file_path = "/data/real_{0}_test_case_{1}(2).csv".format(test,case)
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
