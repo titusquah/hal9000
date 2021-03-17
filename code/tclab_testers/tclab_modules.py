@@ -432,10 +432,10 @@ def perfect_mpc_test(mini_dpin1,
     mhe.time = np.linspace(0, (look_back - 1) * dt, look_back)
     apm_models = [mhe, mpc]
     for ind, apm_model in enumerate(apm_models):
-        apm_model.c1 = apm_model.FV(value=0.39)
-        apm_model.c2 = apm_model.FV(value=1.18)
-        apm_model.c3 = apm_model.FV(value=0.26)
-        apm_model.c4 = apm_model.FV(value=0.007)
+        apm_model.c1 = apm_model.FV(value=c1)
+        apm_model.c2 = apm_model.FV(value=c2)
+        apm_model.c3 = apm_model.FV(value=c3)
+        apm_model.c4 = apm_model.FV(value=c4)
         cs = [apm_model.c1, apm_model.c2, apm_model.c3, apm_model.c4]
 
         apm_model.fan_pwm = apm_model.FV(value=20)

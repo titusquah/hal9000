@@ -6,7 +6,7 @@ case = 1
 
 
 file_path = "/data/real_{0}_test_case_{1}(4).csv".format(test,case)
-file_path = "/data/real_perfect_test_step(2).csv"
+file_path = "/data/real_perfect_test_step(3).csv"
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
