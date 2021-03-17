@@ -52,8 +52,8 @@ for trial in trials:
         tcm.step_tester(dpin1,
                         heater_board,
                         amb_temp,
-                        tol=0.4,
-                        hold_time=20,
+                        tol=0.3,
+                        hold_time=15,
                         fan_pwms_order=trial[1],
                         heater_pwms_order=trial[0],
                         file_path=total_file_path)

@@ -688,8 +688,9 @@ def step_tester(mini_dpin1,
             if len(temp_array) > hold_time+5 and ind > hold_time*2:
                 diffs = np.abs(temp_array[1:] - temp_array[:-1])
                 back_index = int(steps_per_second * hold_time)
-                check_array = diffs[-back_index:]
-                stable = np.all(check_array < tol)
+                check_array = temp_array[-back_index:]
+                max_diff = np.max(check_array) - np.min(check_array)
+                stable = max_diff < tol
             if ind % 5 == 0 and file_path:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
