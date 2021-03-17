@@ -639,3 +639,79 @@ def perfect_mpc_test(mini_dpin1,
     print("Current heater PWM = {0}".format(mini_heater_board.U1))
     print("Current fan PWM = {0}".format(mini_dpin1.value))
     return times, temps, heater_pwms, fan_pwms, c1s, c2s, c3s, c4s
+
+
+def step_tester(mini_dpin1,
+                mini_heater_board,
+                amb_temp,
+                tol,
+                hold_time,
+                fan_pwms_order=None,
+                heater_pwms_order=None,
+                file_path=None):
+    if fan_pwms_order is None:
+        fan_pwms_order = [0.2, 0.2, 0.2]
+    if heater_pwms_order is None:
+        heater_pwms_order = [0, 100, 0]
+    start_time = time.time()
+    prev_time = start_time
+    sleep_max = 1
+    steps_per_second = int(1 / sleep_max)
+    times, temps, heater_pwms, fan_pwms = [], [], [], []
+    current_temp = 0
+    ind = 0
+    for ind1 in range(len(fan_pwms_order)):
+        stable = False
+        mini_dpin1.write(fan_pwms_order[ind1])
+        mini_heater_board.Q1(heater_pwms_order[ind1])
+        while not stable:
+            # Sleep time
+            sleep = sleep_max - (time.time() - prev_time)
+            if sleep >= 0.01:
+                time.sleep(sleep - 0.01)
+            else:
+                time.sleep(0.01)
+
+            # Record time and change in time
+            t = time.time()
+            dt = t - prev_time
+            prev_time = t
+            times.append(t - start_time)
+
+            current_temp = mini_heater_board.T1
+            temps.append(current_temp)
+
+            heater_pwms.append(mini_heater_board.U1)
+            if mini_dpin1.value:
+                fan_pwms.append(mini_dpin1.value)
+            else:
+                fan_pwms.append(0)
+            temp_array = np.array(temps)
+            if len(temp_array) > hold_time+5:
+                diffs = np.abs(temp_array[1:] - temp_array[:-1])
+                back_index = int(steps_per_second * hold_time)
+                check_array = diffs[-back_index:]
+                stable = np.all(check_array < tol)
+            if ind % 5 == 0 and file_path:
+                df = pd.DataFrame({'time': times,
+                                   'temp': temps,
+                                   'amb_temp': amb_temp*np.ones(len(times)),
+                                   'heater_pwm': heater_pwms,
+                                   'fan_pwm': fan_pwms})
+                df.to_csv(file_path)
+            ind += 1
+            if len(temps) % 10 == 0:
+                print("Current T = {0} °C".format(current_temp))
+    df = pd.DataFrame({'time': times,
+                       'temp': temps,
+                       'amb_temp': amb_temp * np.ones(len(times)),
+                       'heater_pwm': heater_pwms,
+                       'fan_pwm': fan_pwms})
+    df.to_csv(file_path)
+    mini_dpin1.write(0)
+    mini_heater_board.Q1(0)
+    print("Ending set temp procedure")
+    print("Current T = {0} °C".format(current_temp))
+    print("Current heater PWM = {0}".format(mini_heater_board.U1))
+    print("Current fan PWM = {0}".format(mini_dpin1.value))
+    return times, temps, heater_pwms, fan_pwms
