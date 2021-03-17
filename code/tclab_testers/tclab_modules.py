@@ -179,10 +179,10 @@ def nominal_mpc_test(mini_dpin1,
                      dt=1,
                      look_back=31,
                      look_forward=51,
-                     c1=0.00464991,
-                     c2=0.801088,
-                     c3=0.0251691,
-                     c4=0.0184281,
+                     c1=0.35,
+                     c2=1.12,
+                     c3=0.25,
+                     c4=0.0071,
                      ):
     max_change = 0.8
     min_change = 0.02
@@ -411,10 +411,10 @@ def perfect_mpc_test(mini_dpin1,
                      dt=1,
                      look_back=31,
                      look_forward=51,
-                     c1=0.00464991,
-                     c2=0.801088,
-                     c3=0.0251691,
-                     c4=0.0184281,
+                     c1=0.35,
+                     c2=1.12,
+                     c3=0.25,
+                     c4=0.0071,
                      ):
     max_change = 0.8
     min_change = 0.02
