@@ -179,6 +179,10 @@ def nominal_mpc_test(mini_dpin1,
                      dt=1,
                      look_back=31,
                      look_forward=51,
+                     c1=0.00464991,
+                     c2=0.801088,
+                     c3=0.0251691,
+                     c4=0.0184281,
                      ):
     max_change = 0.8
     min_change = 0.02
@@ -186,10 +190,6 @@ def nominal_mpc_test(mini_dpin1,
     penalty_scale = 1e5
     steepness = 10
     fv_update_rate = 5  # s
-    c1 = 0.00464991
-    c2 = 0.801088
-    c3 = 0.0251691
-    c4 = 0.0184281
     init_cs = [c1, c2, c3, c4]
     rel_max_change = 0.1
     mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
@@ -215,7 +215,7 @@ def nominal_mpc_test(mini_dpin1,
                 c.STATUS = 0
                 c.FSTATUS = 0
                 c.LOWER = 0
-                c.DMAX = rel_max_change*init_cs[ind1]
+                c.DMAX = rel_max_change * init_cs[ind1]
             apm_model.heater_pwm.STATUS = 0
             apm_model.heater_pwm.FSTATUS = 1
             apm_model.temp_sensor = apm_model.CV(value=init_temp, name='tc1')
@@ -371,7 +371,7 @@ def nominal_mpc_test(mini_dpin1,
             if ind1 % 10 == 0:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
-                                   'temp_lb': temp_lb*np.ones(len(times)),
+                                   'temp_lb': temp_lb * np.ones(len(times)),
                                    'est_temp': est_temps,
                                    'heater_pwm': heater_pwms,
                                    'fan_pwm': fan_pwms,
@@ -411,6 +411,10 @@ def perfect_mpc_test(mini_dpin1,
                      dt=1,
                      look_back=31,
                      look_forward=51,
+                     c1=0.00464991,
+                     c2=0.801088,
+                     c3=0.0251691,
+                     c4=0.0184281,
                      ):
     max_change = 0.8
     min_change = 0.02
@@ -418,10 +422,6 @@ def perfect_mpc_test(mini_dpin1,
     penalty_scale = 1e5
     steepness = 10
     fv_update_rate = 5  # s
-    c1 = 0.00464991
-    c2 = 0.801088
-    c3 = 0.0251691
-    c4 = 0.0184281
     init_cs = [c1, c2, c3, c4]
     rel_max_change = 0.1
 
@@ -585,7 +585,7 @@ def perfect_mpc_test(mini_dpin1,
             c4s.append(mhe.c4.NEWVAL)
 
         mpc.temp_sensor.MEAS = current_temp
-        mpc.fan_pwm.VALUE = d_traj_extend[ind1:ind1 + look_forward]/100
+        mpc.fan_pwm.VALUE = d_traj_extend[ind1:ind1 + look_forward] / 100
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
