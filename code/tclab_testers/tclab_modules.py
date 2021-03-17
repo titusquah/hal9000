@@ -281,6 +281,7 @@ def nominal_mpc_test(mini_dpin1,
     sleep_max = dt
     steps_per_second = int(1 / sleep_max)
     times, temps, heater_pwms, fan_pwms = [], [], [], []
+    est_temps = []
     c1s, c2s, c3s, c4s = [], [], [], []
     current_temp = 0
     update_counter = 0
@@ -324,13 +325,17 @@ def nominal_mpc_test(mini_dpin1,
             oops = True
             pass
 
+        est_temps.append(mhe.temp_sensor.MODEL)
+
         if oops:
             if ind1 != 0:
+
                 c1s.append(c1s[-1])
                 c2s.append(c2s[-1])
                 c3s.append(c3s[-1])
                 c4s.append(c4s[-1])
             else:
+
                 c1s.append(init_cs[0])
                 c2s.append(init_cs[1])
                 c3s.append(init_cs[2])
@@ -366,6 +371,8 @@ def nominal_mpc_test(mini_dpin1,
             if ind1 % 10 == 0:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
+                                   'temp_lb':temp_lb*np.ones(len(times))
+                                   'est_temp': est_temps,
                                    'heater_pwm': heater_pwms,
                                    'fan_pwm': fan_pwms,
                                    'c1': c1s,
@@ -376,6 +383,7 @@ def nominal_mpc_test(mini_dpin1,
             elif ind1 == len(d_traj) - 1:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
+                                   'est_temp': est_temps,
                                    'heater_pwm': heater_pwms,
                                    'fan_pwm': fan_pwms,
                                    'c1': c1s,
@@ -513,6 +521,7 @@ def perfect_mpc_test(mini_dpin1,
     sleep_max = dt
     steps_per_second = int(1 / sleep_max)
     times, temps, heater_pwms, fan_pwms = [], [], [], []
+    est_temps = []
     c1s, c2s, c3s, c4s = [], [], [], []
     current_temp = 0
     update_counter = 0
@@ -556,7 +565,7 @@ def perfect_mpc_test(mini_dpin1,
         except Exception:
             oops = True
             pass
-
+        est_temps.append(mhe.temp_sensor.MODEL)
         if oops:
             if ind1 != 0:
                 c1s.append(c1s[-1])
@@ -601,6 +610,7 @@ def perfect_mpc_test(mini_dpin1,
             if ind1 % 10 == 0:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
+                                   'est_temp': est_temps,
                                    'heater_pwm': heater_pwms,
                                    'fan_pwm': fan_pwms,
                                    'c1': c1s,
@@ -611,6 +621,7 @@ def perfect_mpc_test(mini_dpin1,
             elif ind1 == len(d_traj) - 1:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
+                                   'est_temp': est_temps,
                                    'heater_pwm': heater_pwms,
                                    'fan_pwm': fan_pwms,
                                    'c1': c1s,
