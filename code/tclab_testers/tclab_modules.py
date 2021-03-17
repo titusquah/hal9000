@@ -182,7 +182,7 @@ def nominal_mpc_test(mini_dpin1,
                      c1=0.00088341,
                      c2=0.801088,
                      c3=0.00388592,
-                     c4=1,
+                     c4=0.09,
                      ):
     max_change = 0.8
     min_change = 0.02
@@ -305,7 +305,7 @@ def nominal_mpc_test(mini_dpin1,
         current_temp = mini_heater_board.T1
         current_dist = mini_dpin1.value
 
-        mhe_cs = [mhe.c1, mhe.c3]
+        mhe_cs = [mhe.c1, mhe.c3, mhe.c4]
         for ind2, mhe_c in enumerate(mhe_cs):
             if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
                 mhe_c.STATUS = 1
@@ -413,7 +413,7 @@ def perfect_mpc_test(mini_dpin1,
                      c1=0.00088341,
                      c2=0.801088,
                      c3=0.00388592,
-                     c4=1,
+                     c4=0.09,
                      ):
     max_change = 0.8
     min_change = 0.02
@@ -545,7 +545,7 @@ def perfect_mpc_test(mini_dpin1,
         current_temp = mini_heater_board.T1
         current_dist = mini_dpin1.value
 
-        mhe_cs = [mhe.c1, mhe.c3]
+        mhe_cs = [mhe.c1, mhe.c3, mhe.c4]
         for ind2, mhe_c in enumerate(mhe_cs):
             if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
                 mhe_c.STATUS = 1

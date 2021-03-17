@@ -14,7 +14,7 @@ file_path = "/data/heater_0_100_fan_1.0_1.0.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
 start = 6000
-stop = start+6001
+stop = start + 6001
 start = 0
 stop = len(df)
 d_traj = df.fan_pwm[start:stop] * 100
@@ -26,14 +26,17 @@ amb_temp = df.amb_temp[0]
 
 c1 = 0.00088341
 c2 = 0.801088
-# c2 = 0.85
-c3 = 0.00388592
-c4 = 1
+c3 = 0.0039
+c4 = 0.1
+
+c1 = 0.00075228
+c3 = 0.00358616
+c4 = 0.0899595
 
 model = ftg.FanTempControlLabBlackBox(initial_temp=init_temp,
                                       amb_temp=amb_temp,
                                       dt=1,
-                                      max_time=stop-start-1,
+                                      max_time=stop - start - 1,
                                       d_traj=d_traj,
                                       temp_lb=296.15,
                                       c1=c1,
