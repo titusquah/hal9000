@@ -659,8 +659,8 @@ def step_tester(mini_dpin1,
     steps_per_second = int(1 / sleep_max)
     times, temps, heater_pwms, fan_pwms = [], [], [], []
     current_temp = 0
-    ind = 0
     for ind1 in range(len(fan_pwms_order)):
+        ind=0
         stable = False
         mini_dpin1.write(fan_pwms_order[ind1])
         mini_heater_board.Q1(heater_pwms_order[ind1])
@@ -687,7 +687,7 @@ def step_tester(mini_dpin1,
             else:
                 fan_pwms.append(0)
             temp_array = np.array(temps)
-            if len(temp_array) > hold_time+5:
+            if len(temp_array) > hold_time+5 and ind > hold_time*2:
                 diffs = np.abs(temp_array[1:] - temp_array[:-1])
                 back_index = int(steps_per_second * hold_time)
                 check_array = diffs[-back_index:]

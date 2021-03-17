@@ -30,7 +30,7 @@ trials = [
     [[100, 100, 100], [0.2, 1., 0.2]],
 ]
 for trial in trials:
-    file_path = "/data/heater_{0}_{1}_fan_{2}_3}.csv".format(trial[0][0],
+    file_path = "/data/heater_{0}_{1}_fan_{2}_{3}.csv".format(trial[0][0],
                                                              trial[0][1],
                                                              trial[1][0],
                                                              trial[1][1], )
@@ -53,11 +53,12 @@ for trial in trials:
                         heater_board,
                         amb_temp,
                         tol=0.4,
-                        hold_time=10,
+                        hold_time=20,
                         fan_pwms_order=trial[1],
                         heater_pwms_order=trial[0],
                         file_path=total_file_path)
-    except:
+    except Exception as e:
+        print(e)
         break
 tcm.fan_cooling(dpin1, heater_board, temp_sp=None)
 heater_board.close()
