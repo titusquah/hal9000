@@ -186,10 +186,10 @@ def nominal_mpc_test(mini_dpin1,
                      ):
     max_change = 0.8
     min_change = 0.02
-    decay_rate = 0.02
+    decay_rate = 0.25
     penalty_scale = 1e5
     steepness = 10
-    fv_update_rate = 20  # s
+    fv_update_rate = 5  # s
     init_cs = [c1, c2, c3, c4]
     rel_max_change = 0.1
     mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
@@ -208,7 +208,7 @@ def nominal_mpc_test(mini_dpin1,
         apm_model.temp_heater = apm_model.SV(value=init_temp)
 
         if ind == 0:
-            apm_model.fan_pwm = apm_model.MV(value=20)
+            apm_model.fan_pwm = apm_model.MV(value=0.2)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for ind1, c in enumerate(cs):
@@ -216,7 +216,7 @@ def nominal_mpc_test(mini_dpin1,
                 c.FSTATUS = 0
                 c.LOWER = 1e-4
                 c.UPPER = 2
-                c.DMAX = rel_max_change * init_cs[ind1]
+                c.DMAX = max_change
             apm_model.heater_pwm.STATUS = 0
             apm_model.heater_pwm.FSTATUS = 1
             apm_model.temp_sensor = apm_model.CV(value=init_temp, name='tc1')
@@ -224,7 +224,7 @@ def nominal_mpc_test(mini_dpin1,
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
         else:
-            apm_model.fan_pwm = apm_model.FV(value=20)
+            apm_model.fan_pwm = apm_model.FV(value=0.2)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
@@ -258,7 +258,7 @@ def nominal_mpc_test(mini_dpin1,
 
         if ind == 0:
             apm_model.options.IMODE = 5
-            apm_model.EV_TYPE = 2
+            apm_model.EV_TYPE = 1
         else:
             apm_model.Obj(
                 apm_model.integral(
@@ -287,8 +287,8 @@ def nominal_mpc_test(mini_dpin1,
     current_temp = 0
     update_counter = 0
     ind = 0
-    mhe.temp_sensor.VALUE = mini_heater_board.T1
-    mpc.temp_sensor.VALUE = mini_heater_board.T1
+    mhe.temp_sensor.MEAS = mini_heater_board.T1
+    mpc.temp_sensor.MEAS = mini_heater_board.T1
     for ind1, dist in enumerate(d_traj):
         # Sleep time
         sleep = sleep_max - (time.time() - prev_time)
@@ -309,15 +309,16 @@ def nominal_mpc_test(mini_dpin1,
         current_dist = mini_dpin1.value
 
         mhe_cs = [mhe.c1, mhe.c3]
-        for ind2, mhe_c in enumerate(mhe_cs):
-            if (ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate
-                and ind1>look_back):
+        if (ind1 % fv_update_rate == 0
+                and ind1 > look_back):
+            for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 1
-#                mhe_c.STATUS = 0
+                #                mhe_c.STATUS = 0
                 update_counter += 1
-                # mhe_c.DMAX = max_change * np.exp(
-                #     -decay_rate * update_counter) + min_change
-            else:
+                mhe_c.DMAX = max_change * np.exp(
+                    -decay_rate * update_counter) + min_change
+        else:
+            for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 0
         mhe.heater_pwm.MEAS = mini_heater_board.U1
         mhe.fan_pwm.MEAS = current_dist
@@ -422,12 +423,12 @@ def perfect_mpc_test(mini_dpin1,
                      ):
     max_change = 0.8
     min_change = 0.02
-    decay_rate = 0.02
+    decay_rate = 0.25
+    fv_update_rate = 5  # s
+    rel_max_change = 0.1
     penalty_scale = 1e5
     steepness = 10
-    fv_update_rate = 20  # s
     init_cs = [c1, c2, c3, c4]
-    rel_max_change = 0.1
 
     d_traj_extend = np.concatenate([d_traj, d_traj])
 
@@ -443,7 +444,7 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.c4 = apm_model.FV(value=c4)
         cs = [apm_model.c1, apm_model.c2, apm_model.c3, apm_model.c4]
 
-        apm_model.fan_pwm = apm_model.FV(value=20)
+        apm_model.fan_pwm = apm_model.FV(value=0.2)
         apm_model.fan_pwm.STATUS = 0
         apm_model.fan_pwm.FSTATUS = 1
 
@@ -451,7 +452,7 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.temp_heater = apm_model.SV(value=init_temp)
 
         if ind == 0:
-            apm_model.fan_pwm = apm_model.MV(value=20)
+            apm_model.fan_pwm = apm_model.MV(value=0.2)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for ind1, c in enumerate(cs):
@@ -467,7 +468,7 @@ def perfect_mpc_test(mini_dpin1,
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
         else:
-            apm_model.fan_pwm = apm_model.FV(value=20)
+            apm_model.fan_pwm = apm_model.FV(value=0.2)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
@@ -502,7 +503,7 @@ def perfect_mpc_test(mini_dpin1,
 
         if ind == 0:
             apm_model.options.IMODE = 5
-            apm_model.EV_TYPE = 2
+            apm_model.EV_TYPE = 1
         else:
             apm_model.Obj(
                 apm_model.integral(
@@ -553,15 +554,16 @@ def perfect_mpc_test(mini_dpin1,
         current_dist = mini_dpin1.value
 
         mhe_cs = [mhe.c1, mhe.c3]
-        for ind2, mhe_c in enumerate(mhe_cs):
-            if (ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate
-                and ind1>look_back):
+        if (ind1 % fv_update_rate == 0
+                and ind1 > look_back):
+            for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 1
-#                mhe_c.STATUS = 0
+                #                mhe_c.STATUS = 0
                 update_counter += 1
-                # mhe_c.DMAX = max_change * np.exp(
-                #     -decay_rate * update_counter) + min_change
-            else:
+                mhe_c.DMAX = max_change * np.exp(
+                    -decay_rate * update_counter) + min_change
+        else:
+            for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 0
         mhe.heater_pwm.MEAS = mini_heater_board.U1
         mhe.fan_pwm.MEAS = current_dist
@@ -664,7 +666,7 @@ def step_tester(mini_dpin1,
     times, temps, heater_pwms, fan_pwms = [], [], [], []
     current_temp = 0
     for ind1 in range(len(fan_pwms_order)):
-        ind=0
+        ind = 0
         stable = False
         mini_dpin1.write(fan_pwms_order[ind1])
         mini_heater_board.Q1(heater_pwms_order[ind1])
@@ -691,7 +693,7 @@ def step_tester(mini_dpin1,
             else:
                 fan_pwms.append(0)
             temp_array = np.array(temps)
-            if len(temp_array) > hold_time+5 and ind > hold_time*2:
+            if len(temp_array) > hold_time + 5 and ind > hold_time * 2:
                 diffs = np.abs(temp_array[1:] - temp_array[:-1])
                 back_index = int(steps_per_second * hold_time)
                 check_array = temp_array[-back_index:]
@@ -700,7 +702,7 @@ def step_tester(mini_dpin1,
             if ind % 5 == 0 and file_path:
                 df = pd.DataFrame({'time': times,
                                    'temp': temps,
-                                   'amb_temp': amb_temp*np.ones(len(times)),
+                                   'amb_temp': amb_temp * np.ones(len(times)),
                                    'heater_pwm': heater_pwms,
                                    'fan_pwm': fan_pwms})
                 df.to_csv(file_path)

@@ -9,8 +9,8 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = "/data/heater_0_100_fan_0.4_0.4.csv"
-# file_path = "/data/heater_100_100_fan_0.2_1.0.csv"
+# file_path = "/data/heater_0_100_fan_0.4_0.4.csv"
+file_path = "/data/heater_100_100_fan_0.2_1.0.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
 start = 6000

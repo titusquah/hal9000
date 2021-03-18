@@ -19,10 +19,11 @@ import matplotlib.pyplot as plt
 # plt.plot(diff, 1e5*p)
 # plt.show()
 
-counter = np.arange(0, 60)
+counter = np.arange(0, 24)
 max_change = 0.8
 min_change = 0.02
-rate = 0.02
+rate = 0.25
 values = max_change*np.exp(-rate*counter)+min_change
+plt.figure()
 plt.plot(counter,values)
 
