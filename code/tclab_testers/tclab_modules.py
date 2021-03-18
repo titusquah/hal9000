@@ -208,7 +208,7 @@ def nominal_mpc_test(mini_dpin1,
         apm_model.temp_heater = apm_model.SV(value=init_temp)
 
         if ind == 0:
-            apm_model.fan_pwm = apm_model.MV(value=0.2)
+            apm_model.fan_pwm = apm_model.MV(value=20)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for ind1, c in enumerate(cs):
@@ -224,7 +224,7 @@ def nominal_mpc_test(mini_dpin1,
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
         else:
-            apm_model.fan_pwm = apm_model.FV(value=0.2)
+            apm_model.fan_pwm = apm_model.FV(value=20)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
@@ -236,8 +236,8 @@ def nominal_mpc_test(mini_dpin1,
 
             apm_model.heater_pwm.STATUS = 1
             apm_model.heater_pwm.FSTATUS = 0.
-            # heater_pwm.DMAX = 20
-            # heater_pwm.DCOST = 0.1
+            apm_model.heater_pwm.DMAX = 20
+            apm_model.heater_pwm.DCOST = 0.5
             apm_model.heater_pwm.LOWER = 0
             apm_model.heater_pwm.UPPER = 100
 
@@ -352,7 +352,7 @@ def nominal_mpc_test(mini_dpin1,
             c4s.append(mhe.c4.NEWVAL)
 
         mpc.temp_sensor.MEAS = current_temp
-        mpc.fan_pwm.MEAS = current_dist
+        mpc.fan_pwm.MEAS = current_dist*100
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
@@ -444,7 +444,7 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.c4 = apm_model.FV(value=c4)
         cs = [apm_model.c1, apm_model.c2, apm_model.c3, apm_model.c4]
 
-        apm_model.fan_pwm = apm_model.FV(value=0.2)
+        apm_model.fan_pwm = apm_model.FV(value=20)
         apm_model.fan_pwm.STATUS = 0
         apm_model.fan_pwm.FSTATUS = 1
 
@@ -452,7 +452,7 @@ def perfect_mpc_test(mini_dpin1,
         apm_model.temp_heater = apm_model.SV(value=init_temp)
 
         if ind == 0:
-            apm_model.fan_pwm = apm_model.MV(value=0.2)
+            apm_model.fan_pwm = apm_model.MV(value=20)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for ind1, c in enumerate(cs):
@@ -468,7 +468,7 @@ def perfect_mpc_test(mini_dpin1,
             apm_model.temp_sensor.FSTATUS = 1.
             apm_model.temp_sensor.MEAS_GAP = 0.1
         else:
-            apm_model.fan_pwm = apm_model.FV(value=0.2)
+            apm_model.fan_pwm = apm_model.FV(value=20)
             apm_model.fan_pwm.STATUS = 0
             apm_model.fan_pwm.FSTATUS = 1
             for c in cs:
@@ -480,8 +480,8 @@ def perfect_mpc_test(mini_dpin1,
 
             apm_model.heater_pwm.STATUS = 1
             apm_model.heater_pwm.FSTATUS = 0.
-            # heater_pwm.DMAX = 20
-            # heater_pwm.DCOST = 0.1
+            apm_model.heater_pwm.DMAX = 20
+            apm_model.heater_pwm.DCOST = 0.5
             apm_model.heater_pwm.LOWER = 0
             apm_model.heater_pwm.UPPER = 100
 
@@ -566,7 +566,7 @@ def perfect_mpc_test(mini_dpin1,
             for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 0
         mhe.heater_pwm.MEAS = mini_heater_board.U1
-        mhe.fan_pwm.MEAS = current_dist
+        mhe.fan_pwm.MEAS = current_dist*100
         mhe.temp_sensor.MEAS = current_temp
         try:
             mhe.solve(disp=False)
@@ -593,7 +593,7 @@ def perfect_mpc_test(mini_dpin1,
             c4s.append(mhe.c4.NEWVAL)
 
         mpc.temp_sensor.MEAS = current_temp
-        mpc.fan_pwm.VALUE = d_traj_extend[ind1:ind1 + look_forward] / 100
+        mpc.fan_pwm.VALUE = d_traj_extend[ind1:ind1 + look_forward]
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]

@@ -80,12 +80,12 @@ for trial in trials:
              init_temp,
              file_path=total_file_path,
              dt=1,
-             look_back=31,
+             look_back=121,
              look_forward=51,
-             c1=0.35,
-             c2=1.12,
-             c3=0.25,
-             c4=0.0071,
+             c1=0.001,
+             c2=0.801088,
+             c3=0.00388592,
+             c4=0.09,
              )
     except:
         break
