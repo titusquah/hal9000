@@ -286,6 +286,8 @@ def nominal_mpc_test(mini_dpin1,
     current_temp = 0
     update_counter = 0
     ind = 0
+    mhe.temp_sensor.VALUE = mini_heater_board.T1
+    mpc.temp_sensor.VALUE = mini_heater_board.T1
     for ind1, dist in enumerate(d_traj):
         # Sleep time
         sleep = sleep_max - (time.time() - prev_time)
@@ -305,7 +307,7 @@ def nominal_mpc_test(mini_dpin1,
         current_temp = mini_heater_board.T1
         current_dist = mini_dpin1.value
 
-        mhe_cs = [mhe.c1, mhe.c3, mhe.c4]
+        mhe_cs = [mhe.c1, mhe.c3]
         for ind2, mhe_c in enumerate(mhe_cs):
             if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
                 mhe_c.STATUS = 1
@@ -526,6 +528,8 @@ def perfect_mpc_test(mini_dpin1,
     current_temp = 0
     update_counter = 0
     ind = 0
+    mhe.temp_sensor.VALUE = mini_heater_board.T1
+    mpc.temp_sensor.VALUE = mini_heater_board.T1
     for ind1, dist in enumerate(d_traj):
         # Sleep time
         sleep = sleep_max - (time.time() - prev_time)
@@ -545,7 +549,7 @@ def perfect_mpc_test(mini_dpin1,
         current_temp = mini_heater_board.T1
         current_dist = mini_dpin1.value
 
-        mhe_cs = [mhe.c1, mhe.c3, mhe.c4]
+        mhe_cs = [mhe.c1, mhe.c3]
         for ind2, mhe_c in enumerate(mhe_cs):
             if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
                 mhe_c.STATUS = 1

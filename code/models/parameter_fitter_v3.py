@@ -9,7 +9,7 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = "/data/heater_0_100_fan_1.0_1.0.csv"
+file_path = "/data/heater_0_100_fan_0.4_0.4.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
 c1s = []
@@ -29,17 +29,17 @@ max_time = len(df) - 0
 temp_data = df.temp.values
 amb_temp = df.amb_temp[0]
 
-ic1 = 0.00088341
+ic1 = 0.00075228
 ic2 = 0.801088
-ic3 = 0.00388592
+ic3 = 0.00358616
 ic4 = 0.09
-init_cs = [ic1, ic3, ic4]
+init_cs = [ic1, ic3]
 
 
 def sim_model(cs):
-    c1, c3, c4 = cs
+    c1, c3 = cs
     c2 = ic2
-    # c4 = ic4
+    c4 = ic4
     model = ftg.FanTempControlLabBlackBox(initial_temp=init_temp,
                                           amb_temp=amb_temp,
                                           dt=dt,
@@ -79,7 +79,7 @@ def objective(cs):
     return obj
 
 
-cs0 = np.zeros(3)
+cs0 = np.zeros(2)
 for i in range(len(cs0)):
     cs0[i] = init_cs[i]
     # cs0[2] = 1
@@ -89,20 +89,20 @@ for i in range(len(cs0)):
 # cs0[2] = c4s[-1]
 # cs0[1] = 0.6
 print('Initial SSE Objective: ' + str(objective(cs0)))
-bnds = ((0, 1e20), (0, 1e20), (0, 1e20))
+bnds = ((0, 2), (0, 2))
 solution = minimize(objective, cs0, method='L-BFGS-B', bounds=bnds)
 c_sols = solution.x
 
 print('Final SSE Objective: ' + str(objective(c_sols)))
 
-c1s.append(c_sols[0])
-c2s.append(ic2)
-c3s.append(c_sols[1])
-c4s.append(c_sols[2])
-objs.append(objective(c_sols))
-
-heater_pwms.append(h_traj[0])
-fan_pwms.append(d_traj[0])
+# c1s.append(c_sols[0])
+# c2s.append(ic2)
+# c3s.append(c_sols[1])
+# c4s.append(c_sols[2])
+# objs.append(objective(c_sols))
+#
+# heater_pwms.append(h_traj[0])
+# fan_pwms.append(d_traj[0])
 # data_dict = {'heater_pwm': heater_pwms,
 #              'fan_pwm': fan_pwms,
 #              'c1': c1s,
