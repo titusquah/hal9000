@@ -24,7 +24,6 @@ class FanTempControlLabGrayBox(gym.Env):
                  max_time=6000,
                  alpha=0.01,
                  tau_hc=5,
-                 tau_d=0,
                  k_d=1,
                  beta1=11.33,
                  beta2=0.6,
@@ -42,7 +41,6 @@ class FanTempControlLabGrayBox(gym.Env):
         self.max_time = max_time  # number of time steps (10 min)
         self.alpha = alpha  # W / PWM %
         self.tau_hc = tau_hc  # s
-        self.tau_d = tau_d  # s
         self.k_d = k_d  # m/s / PWM %
         self.beta1 = beta1  # nusselt pre exponential term
         self.beta2 = beta2  # nusselt power term
@@ -104,26 +102,24 @@ class FanTempControlLabGrayBox(gym.Env):
         :return: new_state: (np.ndarray)
         """
         heater_pwm = action
-        sensor_temp, heater_temp, fan_speed = state
+        sensor_temp, heater_temp = state
 
-        dth = (self.surf_area * self.beta1 * fan_speed ** self.beta2 * (
+        dth = (self.surf_area * self.beta1 * (self.k_d * dist) ** self.beta2 * (
                 self.amb_temp - heater_temp) + self.emissivity * self.boltzmann
                * self.surf_area * (self.amb_temp ** 4 - heater_temp ** 4)
                + self.alpha * heater_pwm) / (self.mass * self.cp)
-        duf = (-fan_speed + self.k_d * dist) / self.tau_d
         dtc = (-sensor_temp + heater_temp) / self.tau_hc
 
-        new_state = np.zeros(3)
-        new_state[0] = dth
-        new_state[1] = duf
-        new_state[2] = dtc
+        new_state = np.zeros(2)
+        new_state[0] = dtc
+        new_state[1] = dth
         return new_state
 
     def reset(self):
         self.current_step = 0
         zero = np.float64(0)
-        high_set = [self.initial_temp, self.initial_temp, zero]
-        low_set = [self.initial_temp, self.initial_temp, zero]
+        high_set = [self.initial_temp, self.initial_temp]
+        low_set = [self.initial_temp, self.initial_temp]
         high = np.array(high_set)
         low = np.array(low_set)
 
@@ -135,20 +131,20 @@ class FanTempControlLabGrayBox(gym.Env):
         :param action:(np.ndarray)
         :return:
         """
-        sensor_temp, heater_temp, fan_speed = self.state
+        sensor_temp, heater_temp = self.state
         action = np.clip(action, 0, 1)
         current_dist = self.d_traj[self.current_step]
         heater_pwm = 100 * action[0]
         inputs = tuple([heater_pwm, current_dist])
         time = [0, self.dt]
-        new_sensor_temp, new_heater_temp, new_fan_speed = \
+        new_sensor_temp, new_heater_temp = \
             odeint(self.tclab_step, self.state, time, inputs)[-1]
 
         new_sensor_temp = np.clip(new_sensor_temp, 0, None)
         new_heater_temp = np.clip(new_heater_temp, 0, None)
-        new_fan_speed = np.clip(new_fan_speed, 0, None)
+        # new_fan_speed = np.clip(new_fan_speed, 0, None)
 
-        self.state = [new_sensor_temp, new_heater_temp, new_fan_speed]
+        self.state = [new_sensor_temp, new_heater_temp]
 
         if new_sensor_temp < self.temp_lb:
             penalty = -10

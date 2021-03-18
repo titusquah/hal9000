@@ -9,49 +9,57 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = "/data/heater_0_100_fan_0.4_0.4.csv"
-file_path = "/data/real_perfect_test_step(9).csv"
+# file_path = "/data/heater_0_100_fan_0.2_0.2.csv"
+# file_path = "/data/real_perfect_test_step(9).csv"
+# file_path = "/data/step_test_data(4).csv"
+file_path = "/data/heater_100_100_fan_0.2_0.6.csv"
 df = pd.read_csv(box_folder_path + file_path)
-
-c1s = []
-c2s = []
-c3s = []
-c4s = []
-objs = []
-heater_pwms = []
-fan_pwms = []
 
 d_traj = df.fan_pwm.values * 100
 h_traj = df.heater_pwm.values
 init_temp = df.temp[0]
 dt = np.mean(df.time[0 + 1:len(df)].values
              - df.time[0:len(df) - 1].values)
-max_time = len(df) - 0
-temp_data = df.temp.values
+max_time = len(df) - 1
+temp_data = df.temp.values+273.15
 amb_temp = 24.18
 # amb_temp = df.amb_temp[0]
 
-ic1 = 0.00075228
-ic2 = 0.801088
-ic3 = 0.00358616
-ic4 = 0.09
-init_cs = [ic1, ic3]
-
-
+guess_cp = 479
+guess_alpha = 0.013
+guess_tau_hc = 32.5
+guess_kd = 0.16
+guess_beta1 = 10.7
+guess_beta2 = 0.9
+guesses = [guess_cp,
+           guess_alpha,
+           guess_tau_hc,
+           guess_kd,
+           guess_beta1]
+rand_guesses = []
+for i in range(100):
+    rand_guess = np.random.random(len(guesses))*np.array(guesses)
+    rand_guesses.append(rand_guess)
+# for rand_guess in rand_guesses:
+#     guesses = rand_guess
 def sim_model(cs):
-    c1, c3 = cs
-    c2 = ic2
-    c4 = ic4
-    model = ftg.FanTempControlLabBlackBox(initial_temp=init_temp,
-                                          amb_temp=amb_temp,
-                                          dt=dt,
-                                          max_time=max_time - 1,
-                                          d_traj=d_traj,
-                                          temp_lb=296.15,
-                                          c1=c1,
-                                          c2=c2,
-                                          c3=c3,
-                                          c4=c4)
+    cp, alpha, tau_hc, kd, beta1 = cs
+    model = ftg.FanTempControlLabGrayBox(initial_temp=init_temp + 273.15,
+                                         amb_temp=amb_temp + 273.15,
+                                         cp=cp,
+                                         surf_area=1.2e-3,
+                                         mass=.004,
+                                         emissivity=0.9,
+                                         dt=dt,
+                                         max_time=max_time,
+                                         alpha=alpha,
+                                         tau_hc=tau_hc,
+                                         k_d=kd,
+                                         beta1=beta1,
+                                         beta2=0.9,
+                                         d_traj=d_traj,
+                                         temp_lb=296.15,
+                                         )
     actions = [0]
     dists = [0]
     states = []
@@ -81,20 +89,21 @@ def objective(cs):
     return obj
 
 
-cs0 = np.zeros(2)
+cs0 = np.zeros(len(guesses))
 for i in range(len(cs0)):
-    cs0[i] = init_cs[i]
+    cs0[i] = guesses[i]
     # cs0[2] = 1
 # else:
 #     cs0[0] = c1s[-1]
 #     cs0[1] = c3s[-1]
 # cs0[2] = c4s[-1]
 # cs0[1] = 0.6
+print(cs0)
 print('Initial SSE Objective: ' + str(objective(cs0)))
-bnds = ((0, 2), (0, 2))
+bnds = tuple([(1e-3, 1000) for i in range(len(cs0))])
 solution = minimize(objective, cs0, method='L-BFGS-B', bounds=bnds)
 c_sols = solution.x
-
+print(c_sols)
 print('Final SSE Objective: ' + str(objective(c_sols)))
 
 # c1s.append(c_sols[0])
