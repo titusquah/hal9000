@@ -189,7 +189,7 @@ def nominal_mpc_test(mini_dpin1,
     decay_rate = 0.02
     penalty_scale = 1e5
     steepness = 10
-    fv_update_rate = 5  # s
+    fv_update_rate = 20  # s
     init_cs = [c1, c2, c3, c4]
     rel_max_change = 0.1
     mpc = GEKKO(name='tclab-mpc', remote=False, server='http://127.0.0.1')
@@ -214,7 +214,8 @@ def nominal_mpc_test(mini_dpin1,
             for ind1, c in enumerate(cs):
                 c.STATUS = 0
                 c.FSTATUS = 0
-                c.LOWER = 0
+                c.LOWER = 1e-4
+                c.UPPER = 2
                 c.DMAX = rel_max_change * init_cs[ind1]
             apm_model.heater_pwm.STATUS = 0
             apm_model.heater_pwm.FSTATUS = 1
@@ -309,8 +310,10 @@ def nominal_mpc_test(mini_dpin1,
 
         mhe_cs = [mhe.c1, mhe.c3]
         for ind2, mhe_c in enumerate(mhe_cs):
-            if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
+            if (ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate
+                and ind1>look_back):
                 mhe_c.STATUS = 1
+#                mhe_c.STATUS = 0
                 update_counter += 1
                 # mhe_c.DMAX = max_change * np.exp(
                 #     -decay_rate * update_counter) + min_change
@@ -422,7 +425,7 @@ def perfect_mpc_test(mini_dpin1,
     decay_rate = 0.02
     penalty_scale = 1e5
     steepness = 10
-    fv_update_rate = 5  # s
+    fv_update_rate = 20  # s
     init_cs = [c1, c2, c3, c4]
     rel_max_change = 0.1
 
@@ -551,8 +554,10 @@ def perfect_mpc_test(mini_dpin1,
 
         mhe_cs = [mhe.c1, mhe.c3]
         for ind2, mhe_c in enumerate(mhe_cs):
-            if ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate:
+            if (ind1 % (4 * fv_update_rate) == ind2 * fv_update_rate
+                and ind1>look_back):
                 mhe_c.STATUS = 1
+#                mhe_c.STATUS = 0
                 update_counter += 1
                 # mhe_c.DMAX = max_change * np.exp(
                 #     -decay_rate * update_counter) + min_change

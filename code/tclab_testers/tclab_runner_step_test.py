@@ -26,7 +26,7 @@ if trial == 0:
 else:
     test = tcm.perfect_mpc_test
     test_name = 'perfect'
-file_path = "/data/real_{0}_test_step(6).csv".format(test_name)
+file_path = "/data/real_{0}_test_step(7).csv".format(test_name)
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
@@ -74,7 +74,7 @@ try:
          init_temp,
          file_path=total_file_path,
          dt=1,
-         look_back=31,
+         look_back=121,
          look_forward=51,
          c1=0.001,
          c2=0.801088,
