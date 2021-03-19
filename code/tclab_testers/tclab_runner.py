@@ -19,8 +19,8 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 tlb = 30  # °C
-a1 = [1]
-a2 = np.arange(7)
+a1 = [0,1]
+a2 = np.arange(3)
 trials = np.array(list(itertools.product(*[a1, a2])))
 np.random.shuffle(trials)
 for trial in trials:
@@ -30,7 +30,7 @@ for trial in trials:
     else:
         test = tcm.perfect_mpc_test
         test_name = 'perfect'
-    file_path = "/data/real_{0}_test_case_{1}(4).csv".format(test_name,
+    file_path = "/data/real_{0}_test_case_{1}(5).csv".format(test_name,
                                                           trial[1] + 1)
     folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:
@@ -79,7 +79,7 @@ for trial in trials:
              amb_temp,
              init_temp,
              file_path=total_file_path,
-             dt=1,
+             dt=1.5,
              look_back=121,
              look_forward=51,
              c1=0.001,

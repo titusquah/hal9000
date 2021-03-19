@@ -31,11 +31,11 @@ import pyfirmata
 # Column 2 = input (u)
 # Column 3 = output (yp)
 #################### File Paths
-#url = r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_heater_1.csv"   #Heater File
-#url1= r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_5.csv"   #Disturbance File
+url = r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_heater_1.csv"   #Heater File
+url1= r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_5.csv"   #Disturbance File
 #url2 = r"C:\Users\Tony\Box\hal9000_box_folder\data\dist_cases(1).csv"           # Disturbance Case File
-url = r"C:\Users\kervi\Downloads\step_test_fan_50_3.csv"   #Heater File
-url1= r"C:\Users\kervi\Downloads\step_test_fan_50_2.csv"   #Disturbance File
+#url = r"C:\Users\kervi\Downloads\step_test_fan_50_3.csv"   #Heater File
+#url1= r"C:\Users\kervi\Downloads\step_test_fan_50_2.csv"   #Disturbance File
 
 
 data = pd.read_csv(url)
@@ -115,9 +115,9 @@ def objective(x):
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = -.100 # Km
-x0[1] = 300.0 # taum
-x0[2] = 0.0 # thetam
+x0[0] = 3000 # Km
+x0[1] = 25000.0 # taum
+x0[2] = -0.1 # thetam
 
 # show initial objective
 print('Initial SSE Objective: ' + str(objective(x0)))
@@ -221,9 +221,9 @@ uf = interp1d(t,u)
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = .100 # Km
+x0[0] = .0100 # Km
 x0[1] = 300.0 # taum
-x0[2] = 0.0 # thetam
+x0[2] = 5.0 # thetam
 
 # show initial objective
 print('Initial SSE Objective: ' + str(objective(x0)))
