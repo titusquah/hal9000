@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Mar  7 14:24:56 2021
+Created on Thu Mar 18 19:25:17 2021
 
 @author: kervi
 """
@@ -14,13 +14,16 @@ from scipy.integrate import odeint
 from scipy.optimize import minimize
 from scipy.interpolate import interp1d
 import sympy as sym
-from sympy.abc import s,t,x,z
+from sympy.abc import s,t,x,y,z
 from sympy.integrals import inverse_laplace_transform
 from sympy.integrals import laplace_transform
 from scipy.integrate import odeint
 import random
 from fan_tclab_gym import FanTempControlLabBlackBox as bb_process
-
+from utils import get_d_traj
+import time
+from tclab import TCLab
+import pyfirmata
 
 
 # Import CSV data file
@@ -28,14 +31,16 @@ from fan_tclab_gym import FanTempControlLabBlackBox as bb_process
 # Column 2 = input (u)
 # Column 3 = output (yp)
 #################### File Paths
+#url = r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_heater_1.csv"   #Heater File
+#url1= r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_5.csv"   #Disturbance File
+#url2 = r"C:\Users\Tony\Box\hal9000_box_folder\data\dist_cases(1).csv"           # Disturbance Case File
 url = r"C:\Users\kervi\Downloads\step_test_fan_50_3.csv"   #Heater File
 url1= r"C:\Users\kervi\Downloads\step_test_fan_50_2.csv"   #Disturbance File
-url2 = r"C:\Users\kervi\Downloads\dist_cases.csv"           # Disturbance Case File
 
 
 data = pd.read_csv(url)
 data1= pd.read_csv(url1)
-data2 = pd.read_csv(url2)
+#data2 = pd.read_csv(url2)
 
 ### Collecting Data file paths
 #folder_path_txt = "hidden/box_folder_path.txt"
@@ -110,8 +115,8 @@ def objective(x):
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = 2.0 # Km
-x0[1] = 3.0 # taum
+x0[0] = -.100 # Km
+x0[1] = 300.0 # taum
 x0[2] = 0.0 # thetam
 
 # show initial objective
@@ -216,8 +221,8 @@ uf = interp1d(t,u)
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = 2.0 # Km
-x0[1] = 3.0 # taum
+x0[0] = .100 # Km
+x0[1] = 300.0 # taum
 x0[2] = 0.0 # thetam
 
 # show initial objective
@@ -227,8 +232,8 @@ print('Initial SSE Objective: ' + str(objective(x0)))
 #solution = minimize(objective,x0)
 
 # Another way to solve: with bounds on variables
-bnds = ((-10000, 50000), (-10000, 10000.0), (-10000.0, 10000.0))
-solution = minimize(objective,x0,bounds=bnds,method='SLSQP')
+bnds = ((-100000, 100000), (-100000, 100000.0), (-100000.0, 100000.0))
+solution = minimize(objective,x0,bounds=bnds,method='L-BFGS-B')
 x1 = solution.x
 
 # show final objective
@@ -255,177 +260,4 @@ plt.plot(t,uf(t),'r--',linewidth=3)
 plt.legend(['Measured','Interpolated'],loc='best')
 plt.ylabel('Input Data')
 plt.show()
-
-
-####### FEEDFORWARD CODE ########
-
-kff=-x[0]/x1[0]
-theta_ff=x[2]-x1[2]
-lead=x[1]
-lag=x1[1]
-
-# Connect to Arduino
-#heater_board = TCLab(port='4')
-#
-##Connect to Fan
-#board = pyfirmata.Arduino(
-#    "com5")
-#
-#it = pyfirmata.util.Iterator(board)
-#it.start()
-#
-tf = ns           # final time
-n = int(tf + 1) # number of time points
-
-# time span for the simulation, cycle every 1 sec
-ts = np.linspace(0,tf,n)
-delta_t = ts[1] - ts[0]
-
-# disturbances
-DP = np.zeros(n)
-Fout = np.ones(n)*2.0
-Fin = np.zeros(n)
-
-# Desired level (set point)
-SP = 35
-# level initial condition
-Level0 = SP
-
-# initial valve position
-valve = data1['heater_pwm'][0]
-# Controller bias
-ubias = valve
-# valve opening (0-100%)
-u = np.ones(n) * valve
-
-Cv = 0.0001     # valve size
-rho = 1000.0 # water density (kg/m^3)
-A = 5.0      # tank area (m^2)
-gs = 1.0     # specific gravity
-
-# for storing the results
-z = np.ones(n)*Level0
-es = np.zeros(n)
-P = np.zeros(n)   # proportional
-I = np.zeros(n)   # integral
-ie = np.zeros(n)
-
-# Controller tuning
-Kc = x1[0]
-tauI = x1[1]
-start=0
-stop=ns
-d_traj = data2['case1'][start:stop] * 100
-h_traj = data1['heater_pwm'][start:stop]
-c1a=0.38890287535165813
-c2a=1.1845783829062957
-c3a=0.26458722910810484
-c4a=0.007265841148016536
-# simulate with ODEINT
-for i in range(n-1):
-    # inlet pressure (bar) disturbance
-    DP[i] = data2['case1'][i]
-
-    # inlet mass flow
-    Fin[i] = DP[i]
-
-    # outlet flow (kg/sec) disturbance (change every 10 seconds)
-    if np.mod(i+1,500)==100:
-        Fout[i] = Fout[i-1] + 10.0
-    elif np.mod(i+1,500)==350:
-        Fout[i] = Fout[i-1] - 10.0
-    else:
-        if i>=1:
-            Fout[i] = Fout[i-1]
-
-    # PI controller
-    # calculate the error
-    error = SP - Level0
-    P[i] = Kc * error
-    if i >= 1:  # calculate starting on second cycle
-        ie[i] = ie[i-1] + error * delta_t
-        I[i] = (Kc/tauI) * ie[i]
-    valve = ubias + P[i] + I[i] + kff * (Fout[i]-Fout[0])
-    valve = max(0.0,valve)   # lower bound = 0
-    valve = min(100.0,valve) # upper bound = 100
-    if valve > 100.0:  # check upper limit
-        valve = 100.0
-        ie[i] = ie[i] - error * delta_t # anti-reset windup
-    if valve < 0.0:    # check lower limit
-        valve = 0.0
-        ie[i] = ie[i] - error * delta_t # anti-reset windup
-    print(valve)
-    u[i+1] = valve   # store the valve position
-    es[i+1] = error  # store the error
-    y = bb_process(initial_temp=297.6, #22,
-                       amb_temp=297.6, #22,
-                       dt=0.155,
-                       max_time=ns-1,
-                       d_traj=d_traj,
-                       temp_lb=min(data['temp']),#296.15,
-                       c1=c1a,
-                       c2=c2a,
-                       c3=c3a,
-                       c4=c4a)
-    model=y
-    actions = [0]
-    dists = [0]
-    states = []
-    state = model.reset()
-    states.append(state)
-    done = False
-    ind1 = 0
-#    state, reward, done, info = model.step([h_traj[ind1]/100])
-#    state, reward, done, info = model.step([0.5])
-    #return state[:,0]
-    
-    while not done:
-        state, reward, done, info = model.step([h_traj[ind1]/100])
-        actions.append(h_traj[ind1])
-        # state, reward, done, info = model.step([0.5])
-        # actions.append(0.5)
-        dists.append(info['dist'])
-        states.append(state)
-        ind1 += 1
-    states = np.array(states)
-    Level0 = states[:-1]-273.15 # take the last point
-    z[i+1] = Level0 # store the level for plotting
-Fout[n-1] = Fout[n-2]
-DP[n-1] = DP[n-2]
-Fin[n-1] = Fin[n-2]
-ie[n-1] = ie[n-2]
-
-# plot results
-plt.figure()
-plt.subplot(4,1,1)
-plt.plot(ts,z,'b-',linewidth=3,label='level')
-plt.plot([0,max(ts)],[SP,SP],'k--',linewidth=2,label='set point')
-plt.ylabel('Tank Level')
-plt.legend(loc=1)
-plt.subplot(4,1,2)
-plt.plot(ts,u,'r--',linewidth=3,label='valve')
-plt.ylabel('Valve')    
-plt.legend(loc=1)
-plt.subplot(4,1,3)
-plt.plot(ts,es,'k:',linewidth=3,label='error')
-plt.plot(ts,ie,'r:',linewidth=3,label='int err')
-plt.legend(loc=1)
-plt.ylabel('Error = SP-PV')    
-plt.subplot(4,1,4)
-plt.plot(ts,Fin,'k-',linewidth=3,label='Inlet Flow (kg/sec)')
-plt.plot(ts,Fout,'b--',linewidth=3,label='Outlet Flow (kg/sec)')
-plt.plot(ts,DP,'r:',linewidth=3,label='Inlet Pressure (bar)')
-plt.ylabel('Disturbances')    
-plt.xlabel('Time (sec)')
-plt.legend(loc=1)
-
-plt.show()
-
-
-
-#X = inverse_laplace_transform(((5*s+1)/(4*s+1))*sym.exp(.1*s),s,t)
-#print('X')
-#print(X)
-
-
 
