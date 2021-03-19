@@ -31,8 +31,8 @@ import pyfirmata
 # Column 2 = input (u)
 # Column 3 = output (yp)
 #################### File Paths
-url = r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_heater_1.csv"   #Heater File
-url1= r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_5.csv"   #Disturbance File
+url = r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_3.csv"   #Heater File
+url1= r"C:\Users\Tony\Box\hal9000_box_folder\data\step_test_fan_50_2.csv"   #Disturbance File
 #url2 = r"C:\Users\Tony\Box\hal9000_box_folder\data\dist_cases(1).csv"           # Disturbance Case File
 #url = r"C:\Users\kervi\Downloads\step_test_fan_50_3.csv"   #Heater File
 #url1= r"C:\Users\kervi\Downloads\step_test_fan_50_2.csv"   #Disturbance File
@@ -115,19 +115,19 @@ def objective(x):
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = 3000 # Km
-x0[1] = 25000.0 # taum
-x0[2] = -0.1 # thetam
+x0[0] = 10 # Km
+x0[1] = 200.0 # taum
+x0[2] = 0 # thetam
 
 # show initial objective
 print('Initial SSE Objective: ' + str(objective(x0)))
 
 # optimize Km, taum, thetam
-solution = minimize(objective,x0)
+#solution = minimize(objective,x0)
 
 # Another way to solve: with bounds on variables
-#bnds = ((-100, 500), (-100, 1000.0), (-100.0, 1000.0))
-#solution = minimize(objective,x0,bounds=bnds,method='SLSQP')
+bnds = ((-100000, 100000), (-100000, 100000.0), (-100000.0, 100000.0))
+solution = minimize(objective,x0,bounds=bnds,method='L-BFGS-B')
 x = solution.x
 
 # show final objective

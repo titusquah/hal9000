@@ -68,7 +68,8 @@ delta_t = t[1]-t[0]
 uf = interp1d(t,u)
 
 
-
+x1=[6159.780193306501,54075.10058481033,648.4392669781367]
+x=[0.028363165980579814,339.5272119702745,219.29165427892744]
 
 ####### FEEDFORWARD CODE ########
 
@@ -90,217 +91,218 @@ lag=x1[1]
 tf = 1000         # final time
 n = int(tf + 1) # number of time points
 
-for i in range (0,len(case)):
-	# time span for the simulation, cycle every 1 sec
-	ts = np.linspace(0,tf,n)
-	delta_t = ts[1] - ts[0]
-	
-	# disturbances
-	DP = np.zeros(n)
-	Fout = np.ones(n)*2.0
-	Fin = np.zeros(n)
-	
-	# Desired level (set point)
-	SP = 26
-	# level initial condition
-	Level0 = SP
-	
-	# initial valve position
-	valve = data1['heater_pwm'][0]
-	# Controller bias
-	ubias = valve
-	# valve opening (0-100%)
-	u1 = np.ones(n) * valve
-	
-	Cv = 0.0001     # valve size
-	rho = 1000.0 # water density (kg/m^3)
-	A = 5.0      # tank area (m^2)
-	gs = 1.0     # specific gravity
-	
-	# for storing the results
-	z = np.ones(n)*Level0
-	es = np.zeros(n)
-	P = np.zeros(n)   # proportional
-	I = np.zeros(n)   # integral
-	ie = np.zeros(n)
-	
-	# Controller tuning
-	Kc = x1[0]
-	tauI = x1[1]
-	start=0
-	stop=ns
-	d_traj = data2[case[i]][start:stop] * 100
-	
-	h_traj = data1['heater_pwm'][start:stop]
-	c1a=0.38890287535165813
-	c2a=1.1845783829062957
-	c3a=0.26458722910810484
-	c4a=0.007265841148016536
-	# simulate with ODEINT
-	
-	folder_path_txt = "../hidden/box_folder_path.txt"
-	with open(folder_path_txt) as f:
-	    content = f.readlines()
-	content = [x.strip() for x in content]
-	box_folder_path = content[0]
-	suffix=str(filename[i])
-	file_path = "/data/feedforward_"+suffix+".csv"
-	
-	# Connect to Arduino
-	heater_board = TCLab(port='4')
-	
-	#Connect to Fan
-	board = pyfirmata.Arduino(
-	    "com5")
-	
-	it = pyfirmata.util.Iterator(board)
-	it.start()
-	# Main Loop
-	start_time = time.time()
-	prev_time = start_time
-	times = []
-	temps = []
-	
-	sleep_max = 1
-	steps_per_second = int(1 / sleep_max)
-	
-	#heater_pwms = np.concatenate((np.ones(steps_per_second * 5),
-	#                              np.ones(steps_per_second * 2400),
-	#                              np.ones(steps_per_second * 2400))) * 50
-	#fan_pwms=np.concatenate((np.zeros(steps_per_second * 5),
-	#                              np.ones(steps_per_second * 2400),
-	#                              np.zeros(steps_per_second * 2400))) * 0.5
-	
-	
-	#n = len(data2['case1'])*tf
-	d_traj=get_d_traj(0,5)
-	pntxt2 = "d:{}:o".format(3)
-	dpin = board.get_pin(pntxt2)
-	dpin.mode = 3
-	j=0
-	
-	initial_temp = set_initial_temp(dpin, board, SP, 1, 30)
-	try:
-	    for i in range(1, n):
-	        # Sleep time
-	        sleep = sleep_max - (time.time() - prev_time)
-	        if sleep >= 0.01:
-	            time.sleep(sleep - 0.01)
-	        else:
-	            time.sleep(0.01)
-	
-	        # Record time and change in time
-	        t = time.time()
-	        dt = t - prev_time
-	        prev_time = t
-	        times.append(t - start_time)
-	
-	        # Read temperatures in Celsius
-	        temps.append(heater_board.T1)
-	
-	        # Write new heater values (0-100)
-	        #pntxt2 = "d:{}:o".format(3)
-	#        dpin = board.get_pin(fan_pwms[i])
-	#        dpin.mode = 3
-	        
-	        
-	        # inlet pressure (bar) disturbance
-	        if i&tf==0:
-	            
-	            DP[i] = data2[case[i]][j]
-	            j+=1
-	        else:
-	            DP[i] = data2[case[i]][j]
-	    
-	        # inlet mass flow
-	        Fin[i] = DP[i]
-	    
-	        # outlet flow (kg/sec) disturbance (change every 10 seconds)
-	        if np.mod(i+1,500)==100:
-	            Fout[i] = Fout[i-1] + 10.0
-	        elif np.mod(i+1,500)==350:
-	            Fout[i] = Fout[i-1] - 10.0
-	        else:
-	            if i>=1:
-	                Fout[i] = Fout[i-1]
-	        dpin.write(Fout[i])
-	        # PI controller
-	        # calculate the error
-	        error = SP - Level0
-	        P[i] = Kc * error
-	        if i >= 1:  # calculate starting on second cycle
-	            ie[i] = ie[i-1] + error * delta_t
-	            I[i] = (Kc/tauI) * ie[i]
-	        valve = ubias + P[i] + I[i] + kff * (Fout[i]-Fout[0])
-	        valve = max(0.0,valve)   # lower bound = 0
-	        valve = min(100.0,valve) # upper bound = 100
-	        if valve > 100.0:  # check upper limit
-	            valve = 100.0
-	            ie[i] = ie[i] - error * delta_t # anti-reset windup
-	        if valve < 0.0:    # check lower limit
-	            valve = 0.0
-	            ie[i] = ie[i] - error * delta_t # anti-reset windup
-	        
-	        u1[i] = valve   # store the valve position
-	        heater_board.Q1(valve)
-	
-	        if i % 30 == 0:
-	            df = pd.DataFrame({'time': times,
-	                               'temp': temps,
-	                               'heater_pwm': u1[0:i],
-	                                'fan_pwm':DP[0:i]})
-	            df.to_csv(box_folder_path + file_path)
-	
-	    # Turn off heaters
-	    heater_board.Q1(0)
-	    heater_board.Q2(0)
-	    dpin.write(1)
-	#    heater_board.close()
-	    cool=fan_cooling(dpin,board)
-		
-	    
-	
-	
-	    df = pd.DataFrame({'time': times,
-	                               'temp': temps,
-	                               'heater_pwm': u1[0:i],
-	                                'fan_pwm':DP[0:i]})
-	    df.to_csv(box_folder_path + file_path)
-	#plt.figure(3)
-	#plt.plot(df['time'],df['temp'],'r--',linewidth=3,label='valve')
-	#plt.ylabel('Valve') 
-	
-	# Allow user to end loop with Ctrl-C
-	except KeyboardInterrupt:
-	    # Disconnect from Arduino
-	    heater_board.Q1(0)
-	    heater_board.Q2(0)
-	    print('Shutting down')
-	    heater_board.close()
-	    dpin.write(0)
-	    board.exit()
-	    df = pd.DataFrame({'time': times,
-	                               'temp': temps,
-	                               'heater_pwm': u1[0:i],
-	                                'fan_pwm':DP[0:i]})
-	    df.to_csv(box_folder_path + file_path)
-	
-	
-	# Make sure serial connection still closes when there's an error
-	except:
-	    # Disconnect from Arduino
-	    heater_board.Q1(0)
-	    heater_board.Q2(0)
-	    print('Error: Shutting down')
-	    heater_board.close()
-	    dpin.write(0)
-	    board.exit()
-	    df = pd.DataFrame({'time': times,
-	                               'temp': temps,
-	                               'heater_pwm': u1[0:i],
-	                                'fan_pwm':DP[0:i]})
-	    df.to_csv(box_folder_path + file_path)
-	    raise
+for zz in range (0,len(case)):
+    # time span for the simulation, cycle every 1 sec
+    ts = np.linspace(0,tf,n)
+    delta_t = ts[1] - ts[0]
+    
+    # disturbances
+    DP = np.zeros(n)
+    Fout = np.ones(n)*2.0
+    Fin = np.zeros(n)
+    
+    # Desired level (set point)
+    SP = 33
+    # level initial condition
+    Level0 = SP
+    
+    # initial valve position
+    valve = data1['heater_pwm'][0]
+    # Controller bias
+    ubias = valve
+    # valve opening (0-100%)
+    u1 = np.ones(n) * valve
+    
+    Cv = 0.0001     # valve size
+    rho = 1000.0 # water density (kg/m^3)
+    A = 5.0      # tank area (m^2)
+    gs = 1.0     # specific gravity
+    
+    # for storing the results
+    z = np.ones(n)*Level0
+    es = np.zeros(n)
+    P = np.zeros(n)   # proportional
+    I = np.zeros(n)   # integral
+    ie = np.zeros(n)
+    
+    # Controller tuning
+    Kc = x1[0]
+    tauI = x1[1]
+    start=0
+    stop=ns
+    d_traj = data2[case[zz]][start:stop] * 100
+    
+    h_traj = data1['heater_pwm'][start:stop]
+    c1a=0.38890287535165813
+    c2a=1.1845783829062957
+    c3a=0.26458722910810484
+    c4a=0.007265841148016536
+    # simulate with ODEINT
+    
+    folder_path_txt = "../hidden/box_folder_path.txt"
+    with open(folder_path_txt) as f:
+        content = f.readlines()
+    content = [x.strip() for x in content]
+    box_folder_path = content[0]
+    suffix=str(filename[zz])
+    file_path = "/data/feedforward_"+suffix+".csv"
+    
+    # Connect to Arduino
+    heater_board = TCLab(port='4')
+    
+    #Connect to Fan
+    board = pyfirmata.Arduino(
+        "com5")
+    
+    it = pyfirmata.util.Iterator(board)
+    it.start()
+    # Main Loop
+    start_time = time.time()
+    prev_time = start_time
+    times = []
+    temps = []
+    
+    sleep_max = 1
+    steps_per_second = int(1 / sleep_max)
+    
+    #heater_pwms = np.concatenate((np.ones(steps_per_second * 5),
+    #                              np.ones(steps_per_second * 2400),
+    #                              np.ones(steps_per_second * 2400))) * 50
+    #fan_pwms=np.concatenate((np.zeros(steps_per_second * 5),
+    #                              np.ones(steps_per_second * 2400),
+    #                              np.zeros(steps_per_second * 2400))) * 0.5
+    
+    
+    #n = len(data2['case1'])*tf
+    d_traj=get_d_traj(0,5)
+    pntxt2 = "d:{}:o".format(3)
+    dpin = board.get_pin(pntxt2)
+    dpin.mode = 3
+    j=0
+    
+    initial_temp = set_initial_temp(dpin, heater_board, SP+1, 1, 5)
+    try:
+        for i in range(1, n):
+            # Sleep time
+            sleep = sleep_max - (time.time() - prev_time)
+            if sleep >= 0.01:
+                time.sleep(sleep - 0.01)
+            else:
+                time.sleep(0.01)
+    
+            # Record time and change in time
+            t = time.time()
+            dt = t - prev_time
+            prev_time = t
+            times.append(t - start_time)
+    
+            # Read temperatures in Celsius
+            temps.append(heater_board.T1)
+    
+            # Write new heater values (0-100)
+            #pntxt2 = "d:{}:o".format(3)
+    #        dpin = board.get_pin(fan_pwms[i])
+    #        dpin.mode = 3
+            
+            
+            # inlet pressure (bar) disturbance
+            if i&tf==0:
+                
+                DP[i] = data2[case[zz]][j]
+                j+=1
+            else:
+                DP[i] = data2[case[zz]][j]
+        
+            # inlet mass flow
+            Fin[i] = DP[i]
+        
+            # outlet flow (kg/sec) disturbance (change every 10 seconds)
+            if np.mod(i+1,500)==100:
+                Fout[i] = Fout[i-1] + 10.0
+            elif np.mod(i+1,500)==350:
+                Fout[i] = Fout[i-1] - 10.0
+            else:
+                if i>=1:
+                    Fout[i] = Fout[i-1]
+            dpin.write(Fout[i])
+            # PI controller
+            # calculate the error
+            error = SP - Level0
+            P[i] = Kc * error
+            if i >= 1:  # calculate starting on second cycle
+                ie[i] = ie[i-1] + error * delta_t
+                I[i] = (Kc/tauI) * ie[i]
+            valve = ubias + P[i] + I[i] + kff * (Fout[i]-Fout[0])
+            valve = max(0.0,valve)   # lower bound = 0
+            valve = min(100.0,valve) # upper bound = 100
+            if valve > 100.0:  # check upper limit
+                valve = 100.0
+                ie[i] = ie[i] - error * delta_t # anti-reset windup
+            if valve < 0.0:    # check lower limit
+                valve = 0.0
+                ie[i] = ie[i] - error * delta_t # anti-reset windup
+            
+            u1[i] = valve   # store the valve position
+            heater_board.Q1(valve)
+    
+            if i % 30 == 0:
+                df = pd.DataFrame({'time': times,
+                                   'temp': temps,
+                                   'heater_pwm': u1[0:i],
+                                    'fan_pwm':DP[0:i]})
+                df.to_csv(box_folder_path + file_path)
+    
+        # Turn off heaters
+        heater_board.Q1(0)
+        heater_board.Q2(0)
+        dpin.write(1)
+    #    heater_board.close()
+        cool=fan_cooling(dpin,heater_board)
+        
+        heater_board.close()
+        board.exit()
+    
+    
+        df = pd.DataFrame({'time': times,
+                                   'temp': temps,
+                                   'heater_pwm': u1[0:i],
+                                    'fan_pwm':DP[0:i]})
+        df.to_csv(box_folder_path + file_path)
+#    plt.figure(z)
+#    plt.plot(df['time'],df['temp'],'r--',linewidth=3,label='valve')
+#    plt.ylabel('Valve') 
+    
+    # Allow user to end loop with Ctrl-C
+    except KeyboardInterrupt:
+        # Disconnect from Arduino
+        heater_board.Q1(0)
+        heater_board.Q2(0)
+        print('Shutting down')
+        heater_board.close()
+        dpin.write(0)
+        board.exit()
+        df = pd.DataFrame({'time': times,
+                                   'temp': temps,
+                                   'heater_pwm': u1[0:i],
+                                    'fan_pwm':DP[0:i]})
+        df.to_csv(box_folder_path + file_path)
+    
+    
+    # Make sure serial connection still closes when there's an error
+    except:
+        # Disconnect from Arduino
+        heater_board.Q1(0)
+        heater_board.Q2(0)
+        print('Error: Shutting down')
+        heater_board.close()
+        dpin.write(0)
+        board.exit()
+        df = pd.DataFrame({'time': times,
+                                   'temp': temps,
+                                   'heater_pwm': u1[0:i],
+                                    'fan_pwm':DP[0:i]})
+        df.to_csv(box_folder_path + file_path)
+        raise
 
 '''
 
