@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 # for i in range(1, 7):
 test = 'nominal'
-case = 3
+case = 1
 
-file_path = "/data/real_{0}_test_case_{1}(5).csv".format(test, case)
+file_path = "/data/real_{0}_test_case_{1}(6).csv".format(test, case)
 # file_path = "/data/real_perfect_test_step(9).csv"
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:

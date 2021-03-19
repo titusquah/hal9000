@@ -321,7 +321,7 @@ def nominal_mpc_test(mini_dpin1,
             for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 0
         mhe.heater_pwm.MEAS = mini_heater_board.U1
-        mhe.fan_pwm.MEAS = current_dist*100
+        mhe.fan_pwm.MEAS = current_dist * 100
         mhe.temp_sensor.MEAS = current_temp
         try:
             mhe.solve(disp=False)
@@ -352,7 +352,7 @@ def nominal_mpc_test(mini_dpin1,
             c4s.append(mhe.c4.NEWVAL)
 
         mpc.temp_sensor.MEAS = current_temp
-        mpc.fan_pwm.MEAS = current_dist*100
+        mpc.fan_pwm.MEAS = current_dist * 100
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
@@ -566,7 +566,7 @@ def perfect_mpc_test(mini_dpin1,
             for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 0
         mhe.heater_pwm.MEAS = mini_heater_board.U1
-        mhe.fan_pwm.MEAS = current_dist*100
+        mhe.fan_pwm.MEAS = current_dist * 100
         mhe.temp_sensor.MEAS = current_temp
         try:
             mhe.solve(disp=False)
@@ -722,3 +722,274 @@ def step_tester(mini_dpin1,
     print("Current heater PWM = {0}".format(mini_heater_board.U1))
     print("Current fan PWM = {0}".format(mini_dpin1.value))
     return times, temps, heater_pwms, fan_pwms
+
+
+def pid_tuning(mini_dpin1,
+               mini_heater_board,
+               temp_sp,
+               amb_temp,
+               dist,
+               tol,
+               dt,
+               hold_time,
+               kc=20,
+               ti=70,
+               file_path=None):
+    print("Setting temperature to {0} °C".format(temp_sp))
+    stable = False
+    start_time = time.time()
+    prev_time = start_time
+    sleep_max = dt
+    error = 0
+    mv = 0
+    steps_per_second = int(1 / sleep_max)
+    times, temps, heater_pwms, fan_pwms = [], [], [], []
+    current_temp = 0
+    ind = 0
+    mini_dpin1.write(dist)
+    while not stable:
+        # Sleep time
+        sleep = sleep_max - (time.time() - prev_time)
+        if sleep >= 0.01:
+            time.sleep(sleep - 0.01)
+        else:
+            time.sleep(0.01)
+
+        # Record time and change in time
+        t = time.time()
+        dt = t - prev_time
+        prev_time = t
+        times.append(t - start_time)
+
+        current_temp = mini_heater_board.T1
+        temps.append(current_temp)
+        old_error = error
+        error = temp_sp - current_temp
+
+        dmv = kc * (error - old_error + dt / ti * error)
+        mv += dmv
+        mv = np.clip(mv, 0, 100)
+        mini_heater_board.Q1(mv)
+        heater_pwms.append(mini_heater_board.U1)
+        if mini_dpin1.value:
+            fan_pwms.append(mini_dpin1.value)
+        else:
+            fan_pwms.append(0)
+        temp_array = np.array(temps)
+        errors = np.abs(temp_array - temp_sp)
+        back_index = int(steps_per_second * hold_time)
+        check_array = errors[-back_index:]
+        stable = np.all(check_array < tol)
+        if ind % 5 == 0 and file_path:
+            df = pd.DataFrame({'time': times,
+                               'temp': temps,
+                               'temp_lb': temp_sp*np.ones(len(times)),
+                               'amb_temp': amb_temp*np.ones(len(times)),
+                               'fan_pwm': fan_pwms,
+                               'heater_pwm': heater_pwms})
+            df.to_csv(file_path)
+        ind += 1
+        if len(temps) % 10 == 0:
+            print("Current T = {0} °C".format(current_temp))
+    mini_heater_board.Q1(0)
+    mini_dpin1.write(0)
+    print("Ending set temp procedure")
+    print("Current T = {0} °C".format(current_temp))
+    print("Current heater PWM = {0}".format(mini_heater_board.U1))
+    print("Current fan PWM = {0}".format(mini_dpin1.value))
+    return times, temps, heater_pwms, fan_pwms
+
+
+# def feedforward_pid_test(mini_dpin1,
+#                          mini_heater_board,
+#                          temp_lb,
+#                          d_traj,
+#                          file_path=None,
+#                          dt=1, ):
+#     x1 = [6159.780193306501, 54075.10058481033, 648.4392669781367]
+#     x = [0.028363165980579814, 339.5272119702745, 219.29165427892744]
+#
+#     ####### FEEDFORWARD CODE ########
+#
+#     kff = -x[0] / x1[0]
+#     theta_ff = x[2] - x1[2]
+#     lead = x[1]
+#     lag = x1[1]
+#
+#     tf = 1000  # final time
+#     n = int(tf + 1)  # number of time points
+#
+#     # time span for the simulation, cycle every 1 sec
+#     ts = np.linspace(0, tf, n)
+#     delta_t = ts[1] - ts[0]
+#
+#     # disturbances
+#     DP = np.zeros(n)
+#     Fout = np.ones(n) * 2.0
+#     Fin = np.zeros(n)
+#
+#     # Desired level (set point)
+#     SP = 33
+#     # level initial condition
+#     Level0 = SP
+#
+#     # initial valve position
+#     valve = 0
+#     # Controller bias
+#     ubias = valve
+#     # valve opening (0-100%)
+#     u1 = np.ones(n) * valve
+#
+#     # for storing the results
+#     P = np.zeros(n)  # proportional
+#     I = np.zeros(n)  # integral
+#     ie = np.zeros(n)
+#
+#     # Controller tuning
+#     Kc = x1[0]
+#     tauI = x1[1]
+#
+#     # Connect to Arduino
+#     heater_board = TCLab(port='4')
+#
+#     # Connect to Fan
+#     board = pyfirmata.Arduino(
+#         "com5")
+#
+#     it = pyfirmata.util.Iterator(board)
+#     it.start()
+#     # Main Loop
+#     start_time = time.time()
+#     prev_time = start_time
+#     times = []
+#     temps = []
+#
+#     sleep_max = dt
+#     steps_per_second = int(1 / sleep_max)
+#
+#     d_traj = get_d_traj(0, 5)
+#     pntxt2 = "d:{}:o".format(3)
+#     dpin = board.get_pin(pntxt2)
+#     dpin.mode = 3
+#     j = 0
+#
+#     try:
+#         for i in range(1, n):
+#             # Sleep time
+#             sleep = sleep_max - (time.time() - prev_time)
+#             if sleep >= 0.01:
+#                 time.sleep(sleep - 0.01)
+#             else:
+#                 time.sleep(0.01)
+#
+#             # Record time and change in time
+#             t = time.time()
+#             dt = t - prev_time
+#             prev_time = t
+#             times.append(t - start_time)
+#
+#             # Read temperatures in Celsius
+#             temps.append(heater_board.T1)
+#
+#             # Write new heater values (0-100)
+#             # pntxt2 = "d:{}:o".format(3)
+#             #        dpin = board.get_pin(fan_pwms[i])
+#             #        dpin.mode = 3
+#
+#             # inlet pressure (bar) disturbance
+#             if i & tf == 0:
+#
+#                 DP[i] = data2[case[zz]][j]
+#                 j += 1
+#             else:
+#                 DP[i] = data2[case[zz]][j]
+#
+#             # inlet mass flow
+#             Fin[i] = DP[i]
+#
+#             # outlet flow (kg/sec) disturbance (change every 10 seconds)
+#             if np.mod(i + 1, 500) == 100:
+#                 Fout[i] = Fout[i - 1] + 10.0
+#             elif np.mod(i + 1, 500) == 350:
+#                 Fout[i] = Fout[i - 1] - 10.0
+#             else:
+#                 if i >= 1:
+#                     Fout[i] = Fout[i - 1]
+#             dpin.write(Fout[i])
+#             # PI controller
+#             # calculate the error
+#             error = SP - Level0
+#             P[i] = Kc * error
+#             if i >= 1:  # calculate starting on second cycle
+#                 ie[i] = ie[i - 1] + error * delta_t
+#                 I[i] = (Kc / tauI) * ie[i]
+#             valve = ubias + P[i] + I[i] + kff * (Fout[i] - Fout[0])
+#             valve = max(0.0, valve)  # lower bound = 0
+#             valve = min(100.0, valve)  # upper bound = 100
+#             if valve > 100.0:  # check upper limit
+#                 valve = 100.0
+#                 ie[i] = ie[i] - error * delta_t  # anti-reset windup
+#             if valve < 0.0:  # check lower limit
+#                 valve = 0.0
+#                 ie[i] = ie[i] - error * delta_t  # anti-reset windup
+#
+#             u1[i] = valve  # store the valve position
+#             heater_board.Q1(valve)
+#
+#             if i % 30 == 0:
+#                 df = pd.DataFrame({'time': times,
+#                                    'temp': temps,
+#                                    'heater_pwm': u1[0:i],
+#                                    'fan_pwm': DP[0:i]})
+#                 df.to_csv(box_folder_path + file_path)
+#
+#         # Turn off heaters
+#         heater_board.Q1(0)
+#         heater_board.Q2(0)
+#         dpin.write(1)
+#         #    heater_board.close()
+#         cool = fan_cooling(dpin, heater_board)
+#
+#         heater_board.close()
+#         board.exit()
+#
+#         df = pd.DataFrame({'time': times,
+#                            'temp': temps,
+#                            'heater_pwm': u1[0:i],
+#                            'fan_pwm': DP[0:i]})
+#         df.to_csv(box_folder_path + file_path)
+#     #    plt.figure(z)
+#     #    plt.plot(df['time'],df['temp'],'r--',linewidth=3,label='valve')
+#     #    plt.ylabel('Valve')
+#
+#     # Allow user to end loop with Ctrl-C
+#     except KeyboardInterrupt:
+#         # Disconnect from Arduino
+#         heater_board.Q1(0)
+#         heater_board.Q2(0)
+#         print('Shutting down')
+#         heater_board.close()
+#         dpin.write(0)
+#         board.exit()
+#         df = pd.DataFrame({'time': times,
+#                            'temp': temps,
+#                            'heater_pwm': u1[0:i],
+#                            'fan_pwm': DP[0:i]})
+#         df.to_csv(box_folder_path + file_path)
+#
+#
+#     # Make sure serial connection still closes when there's an error
+#     except:
+#         # Disconnect from Arduino
+#         heater_board.Q1(0)
+#         heater_board.Q2(0)
+#         print('Error: Shutting down')
+#         heater_board.close()
+#         dpin.write(0)
+#         board.exit()
+#         df = pd.DataFrame({'time': times,
+#                            'temp': temps,
+#                            'heater_pwm': u1[0:i],
+#                            'fan_pwm': DP[0:i]})
+#         df.to_csv(box_folder_path + file_path)
+#         raise
