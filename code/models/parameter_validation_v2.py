@@ -10,8 +10,10 @@ with open(folder_path_txt) as f:
 content = [x.strip() for x in content]
 box_folder_path = content[0]
 # file_path = "/data/step_test_data(5).csv"
-# file_path = "/data/heater_100_100_fan_0.2_1.0.csv"
-file_path = "/data/real_perfect_test_step(9).csv"
+file_path = "/data/heater_100_100_fan_0.2_1.0.csv"
+# file_path = "/data/heater_0_100_fan_1.0_1.0.csv"
+# file_path = "/data/real_perfect_test_step(9).csv"
+# file_path = "/data/real_perfect_test_case_4(4).csv"
 df = pd.read_csv(box_folder_path + file_path)
 
 start = 6000
@@ -26,7 +28,7 @@ init_temp = df.temp[start]
 dt = np.mean(df.time[start + 1:stop].values
              - df.time[start:stop - 1].values)
 # amb_temp = df.amb_temp[0]
-amb_temp = 24.18
+amb_temp = 23.81
 guess_cp = 500
 guess_alpha = 0.008
 guess_tau_hc = 5
@@ -37,12 +39,14 @@ guesses = [guess_cp,
            guess_tau_hc,
            guess_kd,
            guess_beta1]
-# cs = np.array([4.78993545e+02, 1.27994140e-02, 32, 1.90822949e-01,
-#        1.07305228e+01])
-cs = np.array([4.79000866e+02, 1.23454967e-02, 3.25009772e+01, 9.88539510e-02,
-               1.06990993e+01])
+cs = np.array([4.78993545e+02, 1.27994140e-02, 32, 1.90822949e-01,
+       1.07305228e+01])
+# cs = np.array([4.79000866e+02, 1.23454967e-02, 3.25009772e+01, 9.88539510e-02,
+#                1.06990993e+01])
 # cs = np.array([3.68358754e+02, 7.25533973e-03, 2.14053115e+01, 1.63950265e-01,
 #  3.59473475e+00])
+# cs = np.array([4.79522382e+02, 3.43681778e-03, 3.24255476e+01, 2.42200656e-02,
+#  9.53981021e+00])
 cp, alpha, tau_hc, kd, beta1 = cs
 model = ftg.FanTempControlLabGrayBox(initial_temp=init_temp + 273.15,
                                      amb_temp=amb_temp + 273.15,

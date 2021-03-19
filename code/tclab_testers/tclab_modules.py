@@ -321,7 +321,7 @@ def nominal_mpc_test(mini_dpin1,
             for ind2, mhe_c in enumerate(mhe_cs):
                 mhe_c.STATUS = 0
         mhe.heater_pwm.MEAS = mini_heater_board.U1
-        mhe.fan_pwm.MEAS = current_dist
+        mhe.fan_pwm.MEAS = current_dist*100
         mhe.temp_sensor.MEAS = current_temp
         try:
             mhe.solve(disp=False)

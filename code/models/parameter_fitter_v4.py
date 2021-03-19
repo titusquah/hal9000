@@ -12,7 +12,8 @@ box_folder_path = content[0]
 # file_path = "/data/heater_0_100_fan_0.2_0.2.csv"
 # file_path = "/data/real_perfect_test_step(9).csv"
 # file_path = "/data/step_test_data(4).csv"
-file_path = "/data/heater_100_100_fan_0.2_0.6.csv"
+# file_path = "/data/heater_100_100_fan_0.2_0.6.csv"
+file_path = "/data/real_perfect_test_case_4(4).csv"
 df = pd.read_csv(box_folder_path + file_path)
 
 d_traj = df.fan_pwm.values * 100
@@ -26,9 +27,9 @@ amb_temp = 24.18
 # amb_temp = df.amb_temp[0]
 
 guess_cp = 479
-guess_alpha = 0.013
+guess_alpha = 0.012
 guess_tau_hc = 32.5
-guess_kd = 0.16
+guess_kd = 0.1
 guess_beta1 = 10.7
 guess_beta2 = 0.9
 guesses = [guess_cp,
