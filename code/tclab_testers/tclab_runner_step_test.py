@@ -19,7 +19,7 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 tlb = 30  # °C
-trial = 1
+trial = 0
 if trial == 0:
     test = tcm.nominal_mpc_test
     test_name = 'nominal'
@@ -73,7 +73,7 @@ try:
          amb_temp,
          init_temp,
          file_path=total_file_path,
-         dt=1,
+         dt=1.5,
          look_back=121,
          look_forward=11,
          c1=0.001,
