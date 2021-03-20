@@ -783,8 +783,8 @@ def pid_tuning(mini_dpin1,
         if ind % 5 == 0 and file_path:
             df = pd.DataFrame({'time': times,
                                'temp': temps,
-                               'temp_lb': temp_sp*np.ones(len(times)),
-                               'amb_temp': amb_temp*np.ones(len(times)),
+                               'temp_lb': temp_sp * np.ones(len(times)),
+                               'amb_temp': amb_temp * np.ones(len(times)),
                                'fan_pwm': fan_pwms,
                                'heater_pwm': heater_pwms})
             df.to_csv(file_path)
@@ -799,6 +799,184 @@ def pid_tuning(mini_dpin1,
     print("Current fan PWM = {0}".format(mini_dpin1.value))
     return times, temps, heater_pwms, fan_pwms
 
+
+def pid_test(mini_dpin1,
+             mini_heater_board,
+             temp_lb,
+             amb_temp,
+             dist_df,
+             dt,
+             kc=20,
+             ti=70,
+             file_path=None):
+    print("Starting PID test")
+    temp_sp = 1.1*temp_lb
+    start_time = time.time()
+    prev_time = start_time
+    sleep_max = dt
+    error = 0
+    mv = 0
+    steps_per_second = int(1 / sleep_max)
+    times, temps, heater_pwms, fan_pwms = [], [], [], []
+    current_temp = 0
+    ind = 0
+    d_time = dist_df.time.values
+    d_traj = dist_df.fan_pwm.values
+    t = time.time()
+    time_elapsed = t - start_time
+    while time_elapsed < np.max(d_time):
+        # Sleep time
+        sleep = sleep_max - (time.time() - prev_time)
+        if sleep >= 0.01:
+            time.sleep(sleep - 0.01)
+        else:
+            time.sleep(0.01)
+
+        # Record time and change in time
+        t = time.time()
+        dt = t - prev_time
+        prev_time = t
+        time_elapsed = t - start_time
+        times.append(time_elapsed)
+
+        current_dist = dist_df[(dist_df['time'] < time_elapsed)][
+            'fan_pwm'].values[-1]
+
+        mini_dpin1.write(current_dist)
+
+        current_temp = mini_heater_board.T1
+        temps.append(current_temp)
+        old_error = error
+        error = temp_sp - current_temp
+
+        dmv = kc * (error - old_error + dt / ti * error)
+        mv += dmv
+        mv = np.clip(mv, 0, 100)
+        mini_heater_board.Q1(mv)
+        heater_pwms.append(mini_heater_board.U1)
+        if mini_dpin1.value:
+            fan_pwms.append(mini_dpin1.value)
+        else:
+            fan_pwms.append(0)
+
+        if ind % 5 == 0 and file_path:
+            df = pd.DataFrame({'time': times,
+                               'temp': temps,
+                               'temp_lb': temp_sp * np.ones(len(times)),
+                               'amb_temp': amb_temp * np.ones(len(times)),
+                               'fan_pwm': fan_pwms,
+                               'heater_pwm': heater_pwms})
+            df.to_csv(file_path)
+        ind += 1
+        if len(temps) % 10 == 0:
+            print("Current T = {0} °C".format(current_temp))
+    if file_path:
+        df = pd.DataFrame({'time': times,
+                           'temp': temps,
+                           'temp_lb': temp_sp * np.ones(len(times)),
+                           'amb_temp': amb_temp * np.ones(len(times)),
+                           'fan_pwm': fan_pwms,
+                           'heater_pwm': heater_pwms})
+        df.to_csv(file_path)
+    mini_heater_board.Q1(0)
+    mini_dpin1.write(0)
+    print("Ending PID test")
+    print("Current T = {0} °C".format(current_temp))
+    print("Current heater PWM = {0}".format(mini_heater_board.U1))
+    print("Current fan PWM = {0}".format(mini_dpin1.value))
+    return times, temps, heater_pwms, fan_pwms
+
+
+def ratio_ff_pid_test(mini_dpin1,
+                      mini_heater_board,
+                      temp_sp,
+                      amb_temp,
+                      dist_df,
+                      dt,
+                      kc=20,
+                      ti=70,
+                      ff_ratio=0.004,
+                      file_path=None):
+    print("Setting temperature to {0} °C".format(temp_sp))
+    start_time = time.time()
+    prev_time = start_time
+    sleep_max = dt
+    error = 0
+    mv = 0
+    steps_per_second = int(1 / sleep_max)
+    times, temps, heater_pwms, fan_pwms = [], [], [], []
+    current_temp = 0
+    ind = 0
+    d_time = dist_df.time.values
+    d_traj = dist_df.fan_pwm.values
+    t = time.time()
+    time_elapsed = t - start_time
+    while time_elapsed < np.max(d_time):
+        # Sleep time
+        sleep = sleep_max - (time.time() - prev_time)
+        if sleep >= 0.01:
+            time.sleep(sleep - 0.01)
+        else:
+            time.sleep(0.01)
+
+        # Record time and change in time
+        t = time.time()
+        dt = t - prev_time
+        prev_time = t
+        time_elapsed = t - start_time
+        times.append(time_elapsed)
+
+        current_dist = dist_df[(dist_df['time'] < time_elapsed)][
+            'fan_pwm'].values[-1]
+
+        mini_dpin1.write(current_dist)
+
+        current_temp = mini_heater_board.T1
+        temps.append(current_temp)
+        old_error = error
+        error = temp_sp - current_temp
+
+        ffAction = 100*ff_ratio * (current_dist * 100 - 20)
+
+        dmv = kc * (error - old_error + dt / ti * error)
+        mv += dmv
+        mv = np.clip(mv, 0, 100)
+
+        pid_ff_action = np.clip(mv + ffAction, 0, 100)
+
+        mini_heater_board.Q1(pid_ff_action)
+        heater_pwms.append(mini_heater_board.U1)
+        if mini_dpin1.value:
+            fan_pwms.append(mini_dpin1.value)
+        else:
+            fan_pwms.append(0)
+
+        if ind % 5 == 0 and file_path:
+            df = pd.DataFrame({'time': times,
+                               'temp': temps,
+                               'temp_lb': temp_sp * np.ones(len(times)),
+                               'amb_temp': amb_temp * np.ones(len(times)),
+                               'fan_pwm': fan_pwms,
+                               'heater_pwm': heater_pwms})
+            df.to_csv(file_path)
+        ind += 1
+        if len(temps) % 10 == 0:
+            print("Current T = {0} °C".format(current_temp))
+    if file_path:
+        df = pd.DataFrame({'time': times,
+                           'temp': temps,
+                           'temp_lb': temp_sp * np.ones(len(times)),
+                           'amb_temp': amb_temp * np.ones(len(times)),
+                           'fan_pwm': fan_pwms,
+                           'heater_pwm': heater_pwms})
+        df.to_csv(file_path)
+    mini_heater_board.Q1(0)
+    mini_dpin1.write(0)
+    print("Ending PID test")
+    print("Current T = {0} °C".format(current_temp))
+    print("Current heater PWM = {0}".format(mini_heater_board.U1))
+    print("Current fan PWM = {0}".format(mini_dpin1.value))
+    return times, temps, heater_pwms, fan_pwms
 
 # def feedforward_pid_test(mini_dpin1,
 #                          mini_heater_board,

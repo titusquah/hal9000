@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 
 # for i in range(1, 7):
 test = 'nominal'
-case = 1
+case = 3
 
-file_path = "/data/real_{0}_test_case_{1}(6).csv".format(test, case)
-# file_path = "/data/real_perfect_test_step(9).csv"
+# file_path = "/data/real_{0}_test_case_{1}(6).csv".format(test, case)
+file_path = "/data/real_nominal_test_step(12).csv"
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
@@ -28,8 +28,8 @@ ax[1].plot(df.time,
 ax[2].plot(df.time,
            df.heater_pwm, 'r-', label='Heater PWM')
 ax[3].plot(df.time, df.c1, 'g-', label='$c_1$')
-ax[3].plot(df.time, df.c2, 'r-', label='$c_2$')
+# ax[3].plot(df.time, df.c2, 'r-', label='$c_2$')
 ax[3].plot(df.time, df.c3, 'b-', label='$c_3$')
-ax[3].plot(df.time, df.c4, 'k-', label='$c_4$')
+# ax[3].plot(df.time, df.c4, 'k-', label='$c_4$')
 ax[3].legend()
 plt.show()
