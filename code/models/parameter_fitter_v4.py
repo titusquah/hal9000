@@ -13,17 +13,22 @@ box_folder_path = content[0]
 # file_path = "/data/real_perfect_test_step(9).csv"
 # file_path = "/data/step_test_data(4).csv"
 # file_path = "/data/heater_100_100_fan_0.2_0.6.csv"
-file_path = "/data/real_perfect_test_case_4(4).csv"
+# file_path = "/data/real_perfect_test_case_4(4).csv"
+file_path = "/data/test4_big_fan.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
-d_traj = df.fan_pwm.values * 100
-h_traj = df.heater_pwm.values
+start = 0
+stop = start + 6001
+
+d_traj = df.fan_pwm.values[start:stop] * 100
+h_traj = df.heater_pwm.values[start:stop]
 init_temp = df.temp[0]
-dt = np.mean(df.time[0 + 1:len(df)].values
-             - df.time[0:len(df) - 1].values)
-max_time = len(df) - 1
-temp_data = df.temp.values+273.15
-amb_temp = 24.18
+dt = np.mean(df.time[start + 1:stop].values
+             - df.time[start:stop - 1].values)
+max_time = stop-start
+temp_data = df.temp.values[start:stop]+273.15
+amb_temp = df['temp'].values[0]
+
 # amb_temp = df.amb_temp[0]
 
 guess_cp = 479
@@ -52,7 +57,7 @@ def sim_model(cs):
                                          mass=.004,
                                          emissivity=0.9,
                                          dt=dt,
-                                         max_time=max_time,
+                                         max_time=max_time-1,
                                          alpha=alpha,
                                          tau_hc=tau_hc,
                                          k_d=kd,

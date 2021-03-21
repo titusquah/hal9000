@@ -9,8 +9,9 @@ with open(folder_path_txt) as f:
     content = f.readlines()
 content = [x.strip() for x in content]
 box_folder_path = content[0]
-file_path = "/data/heater_0_100_fan_0.4_0.4.csv"
-file_path = "/data/real_perfect_test_step(9).csv"
+# file_path = "/data/heater_0_100_fan_0.4_0.4.csv"
+# file_path = "/data/real_perfect_test_step(9).csv"
+file_path = "/data/test4_big_fan.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
 c1s = []
@@ -20,15 +21,17 @@ c4s = []
 objs = []
 heater_pwms = []
 fan_pwms = []
+start = 0
+stop = start + 6001
 
-d_traj = df.fan_pwm.values * 100
-h_traj = df.heater_pwm.values
+d_traj = df.fan_pwm.values[start:stop] * 100
+h_traj = df.heater_pwm.values[start:stop]
 init_temp = df.temp[0]
-dt = np.mean(df.time[0 + 1:len(df)].values
-             - df.time[0:len(df) - 1].values)
-max_time = len(df) - 0
-temp_data = df.temp.values
-amb_temp = 24.18
+dt = np.mean(df.time[start + 1:stop].values
+             - df.time[start:stop - 1].values)
+max_time = stop-start
+temp_data = df.temp.values[start:stop]
+amb_temp = df['temp'].values[0]
 # amb_temp = df.amb_temp[0]
 
 ic1 = 0.00075228
@@ -45,7 +48,7 @@ def sim_model(cs):
     model = ftg.FanTempControlLabBlackBox(initial_temp=init_temp,
                                           amb_temp=amb_temp,
                                           dt=dt,
-                                          max_time=max_time - 1,
+                                          max_time=max_time-1,
                                           d_traj=d_traj,
                                           temp_lb=296.15,
                                           c1=c1,
@@ -91,7 +94,7 @@ for i in range(len(cs0)):
 # cs0[2] = c4s[-1]
 # cs0[1] = 0.6
 print('Initial SSE Objective: ' + str(objective(cs0)))
-bnds = ((0, 2), (0, 2))
+bnds = ((1e-4, 2), (1e-4, 2))
 solution = minimize(objective, cs0, method='L-BFGS-B', bounds=bnds)
 c_sols = solution.x
 
