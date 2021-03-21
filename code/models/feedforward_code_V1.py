@@ -88,7 +88,7 @@ lag=x1[1]
 #it = pyfirmata.util.Iterator(board)
 #it.start()
 #
-tf = 1000         # final time
+tf = 5000         # final time
 n = int(tf + 1) # number of time points
 
 for zz in range (0,len(case)):
@@ -145,7 +145,7 @@ for zz in range (0,len(case)):
     content = [x.strip() for x in content]
     box_folder_path = content[0]
     suffix=str(filename[zz])
-    file_path = "/data/feedforward_"+suffix+".csv"
+    file_path = "/data/feedforward2_"+suffix+".csv"
     
     # Connect to Arduino
     heater_board = TCLab(port='4')

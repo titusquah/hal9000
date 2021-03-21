@@ -30,7 +30,7 @@ for trial in trials:
     else:
         test = tcm.ratio_ff_pid_test
         test_name = 'ff_pid'
-    file_path = "/data/real_{0}_test_case_{1}(1).csv".format(test_name,
+    file_path = "/data/real_{0}_test_case_{1}(2).csv".format(test_name,
                                                              trial[1] + 1)
     folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:
@@ -55,7 +55,7 @@ for trial in trials:
                                                                    tol,
                                                                    hold_time)
     init_temp = temps1[-1]
-    dist_file_path = "/dist_cases(1)_w_time.csv"
+    dist_file_path = "/data/dist_cases(1)_w_time.csv"
     big_dist_df = pd.read_csv(box_folder_path+dist_file_path)
     dist_df = big_dist_df[['time', 'case{}'.format(trial[1]+1)]]
     dist_df.columns = ['time', 'fan_pwm']
@@ -69,7 +69,8 @@ for trial in trials:
              file_path=total_file_path,
              dt=dt,
              )
-    except:
+    except Exception as e:
+        print(e)
         break
 tcm.fan_cooling(dpin1, heater_board, temp_sp=None)
 heater_board.close()
