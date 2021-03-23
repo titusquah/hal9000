@@ -19,17 +19,13 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 tlb = 30  # °C
-a1 = [0]
+a1 = [1.5, 2, 2.5, 3]
 a2 = np.arange(3)
 trials = np.array(list(itertools.product(*[a1, a2])))
 np.random.shuffle(trials)
 for trial in trials:
-    if trial[0] == 0:
-        test = tcm.forecast_mpc_test
-        test_name = 'forecast'
-    else:
-        test = tcm.perfect_mpc_test
-        test_name = 'perfect'
+    test = tcm.forecast_mpc_test
+    test_name = 'forecast_scale_{}'.format(trial[0])
     file_path = "/data/real_{0}_test_case_{1}(1).csv".format(test_name,
                                                              trial[1] + 1)
     folder_path_txt = "../hidden/box_folder_path.txt"
@@ -65,6 +61,7 @@ for trial in trials:
              forecast,
              amb_temp,
              init_temp,
+             trial[0],
              file_path=total_file_path,
              dt=1.5,
              look_back=121,

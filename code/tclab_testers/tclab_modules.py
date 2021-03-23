@@ -823,7 +823,7 @@ def pid_test(mini_dpin1,
              ti=70,
              file_path=None):
     print("Starting PID test")
-    temp_sp = 1.05*temp_lb
+    temp_sp = 1.05 * temp_lb
     start_time = time.time()
     prev_time = start_time
     sleep_max = dt
@@ -851,9 +851,9 @@ def pid_test(mini_dpin1,
         prev_time = t
         time_elapsed = t - start_time
         times.append(time_elapsed)
-        
+
         filtered_df = dist_df[(dist_df['time'] < time_elapsed)]
-        if len(filtered_df)==0:
+        if len(filtered_df) == 0:
             current_dist = 0
         else:
             current_dist = dist_df[(dist_df['time'] < time_elapsed)][
@@ -885,8 +885,8 @@ def pid_test(mini_dpin1,
                                'heater_pwm': heater_pwms})
             df.to_csv(file_path)
         ind += 1
-#        if len(temps) % 10 == 0:
-#            print("Current T = {0} °C".format(current_temp))
+    #        if len(temps) % 10 == 0:
+    #            print("Current T = {0} °C".format(current_temp))
     if file_path:
         df = pd.DataFrame({'time': times,
                            'temp': temps,
@@ -914,7 +914,7 @@ def ratio_ff_pid_test(mini_dpin1,
                       ti=70,
                       ff_ratio=0.004,
                       file_path=None):
-    temp_sp = temp_lb*1.034
+    temp_sp = temp_lb * 1.034
     print("Setting temperature to {0} °C".format(temp_sp))
     start_time = time.time()
     prev_time = start_time
@@ -945,7 +945,7 @@ def ratio_ff_pid_test(mini_dpin1,
         times.append(time_elapsed)
 
         filtered_df = dist_df[(dist_df['time'] < time_elapsed)]
-        if len(filtered_df)==0:
+        if len(filtered_df) == 0:
             current_dist = 0
         else:
             current_dist = dist_df[(dist_df['time'] < time_elapsed)][
@@ -982,8 +982,8 @@ def ratio_ff_pid_test(mini_dpin1,
                                'heater_pwm': heater_pwms})
             df.to_csv(file_path)
         ind += 1
-#        if len(temps) % 10 == 0:
-#            print("Current T = {0} °C".format(current_temp))
+    #        if len(temps) % 10 == 0:
+    #            print("Current T = {0} °C".format(current_temp))
     if file_path:
         df = pd.DataFrame({'time': times,
                            'temp': temps,
@@ -1008,6 +1008,7 @@ def forecast_mpc_test(mini_dpin1,
                       forecast,
                       amb_temp,
                       init_temp,
+                      scale_factor,
                       file_path=None,
                       dt=1,
                       look_back=31,
@@ -1189,9 +1190,9 @@ def forecast_mpc_test(mini_dpin1,
             c4s.append(mhe.c4.NEWVAL)
 
         mpc.temp_sensor.MEAS = current_temp
-        prediction = np.concatenate([[current_dist*100],
-                                     forecast[ind1+1:ind1+look_forward]])
-        mpc.fan_pwm.VALUE = prediction
+        prediction = np.concatenate([[current_dist * 100],
+                                     forecast[ind1 + 1:ind1 + look_forward]])
+        mpc.fan_pwm.VALUE = prediction * scale_factor
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
@@ -1222,7 +1223,9 @@ def forecast_mpc_test(mini_dpin1,
                                    'c1': c1s,
                                    'c2': c2s,
                                    'c3': c3s,
-                                   'c4': c4s})
+                                   'c4': c4s,
+                                   'forecast': (scale_factor *
+                                                forecast[:len(times)])})
                 df.to_csv(file_path)
             elif ind1 == len(d_traj) - 1:
                 df = pd.DataFrame({'time': times,
@@ -1234,7 +1237,9 @@ def forecast_mpc_test(mini_dpin1,
                                    'c1': c1s,
                                    'c2': c2s,
                                    'c3': c3s,
-                                   'c4': c4s})
+                                   'c4': c4s,
+                                   'forecast': (scale_factor *
+                                                forecast[:len(times)])})
                 df.to_csv(file_path)
     mini_dpin1.write(0)
     mini_heater_board.Q1(0)
