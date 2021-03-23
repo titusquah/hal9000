@@ -4,7 +4,7 @@ import numpy as np
 
 # for i in range(1, 4):
 
-file_path = "/data/real_forecast_test_case_1(1).csv"
+file_path = "/data/real_forecast_scale_2.0_test_case_2.0(1).csv"
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
@@ -48,6 +48,9 @@ ax[0].plot(time, np.ones(len(time)) * tlb,
 ax[0].legend()
 ax[1].plot(mini_df.time,
            mini_df.fan_pwm, 'b-', label='Fan PWM')
+mini_forecast = np.clip(mini_df.forecast.values/100,0,1)
+ax[1].plot(mini_df.time,
+           mini_forecast, 'b--', label='Forecast Fan PWM')
 ax[2].plot(mini_df.time,
            mini_df.heater_pwm, 'r-', label='Heater PWM')
 ax[3].plot(mini_df.time, mini_df.c1, 'g-', label='$c_1$')
