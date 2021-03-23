@@ -87,25 +87,25 @@ for i in range(1, 4):
     pid_heat_array = pid_heat_array[:chck_ind]
     savings = (1 - mini_power / pid_heat_array) * 100
     savings_array.extend(list(savings))
-    # print(mini_df['time'].max())
-    # fig, ax = plt.subplots(3, figsize=(14,10))
-    # ax[0].plot(time,
-    #            mini_df.temp, 'bo-', label='Measured', markersize=2)
-    # ax[0].plot(time, np.ones(len(time)) * tlb,
-    #            'b--', label='$T_{lb}$')
-    # ax[0].set_ylabel(r'Temperature (°C)')
-    # ax[0].legend(loc='upper center', bbox_to_anchor=(0.5, 2),
-    #              fancybox=True, shadow=True, ncol=2)
-    # ax[1].plot(time,
-    #            mini_df.fan_pwm, 'b-', label='Fan PWM', linewidth=3)
-    # ax[1].set_ylabel('Fan PWM %')
-    # ax[2].plot(time,
-    #            mini_df.heater_pwm, 'r-', label='Heater PWM', linewidth=3)
-    # ax[2].set_ylabel('Heater PWM %')
-    # ax[2].set_xlabel('Time (s)')
-    # plt.tight_layout()
-    # plt.show()
-    # plt.savefig('{0}_case{1}_cut.png'.format(test, case))
+    print(mini_df['time'].max())
+    fig, ax = plt.subplots(3, figsize=(14,10))
+    ax[0].plot(time,
+                mini_df.temp, 'bo-', label='Measured', markersize=2)
+    ax[0].plot(time, np.ones(len(time)) * tlb,
+                'b--', label='$T_{lb}$')
+    ax[0].set_ylabel(r'Temperature (°C)')
+    ax[0].legend(loc='upper center', bbox_to_anchor=(0.5, 2),
+                  fancybox=True, shadow=True, ncol=2)
+    ax[1].plot(time,
+                mini_df.fan_pwm, 'b-', label='Fan PWM', linewidth=3)
+    ax[1].set_ylabel('Fan PWM %')
+    ax[2].plot(time,
+                mini_df.heater_pwm, 'r-', label='Heater PWM', linewidth=3)
+    ax[2].set_ylabel('Heater PWM %')
+    ax[2].set_xlabel('Time (s)')
+    plt.tight_layout()
+    plt.show()
+#plt.savefig('{0}_case{1}_cut.png'.format(test, case))
 savings_array = np.array(savings_array)
 mean, lb, ub = mean_confidence_interval(savings_array)
 print("{0:.4f}±{1:.4f}".format(mean, mean - lb))

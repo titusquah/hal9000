@@ -1194,7 +1194,7 @@ def forecast_mpc_test(mini_dpin1,
         mpc.temp_sensor.MEAS = current_temp
         prediction = np.concatenate([[current_dist * 100],
                                      forecast[ind1 + 1:ind1 + look_forward]])
-        mpc.fan_pwm.VALUE = prediction * scale_factor
+        mpc.fan_pwm.VALUE = np.clip(prediction * scale_factor,0,100)
         mpc.c1.MEAS = c1s[-1]
         mpc.c2.MEAS = c2s[-1]
         mpc.c3.MEAS = c3s[-1]
@@ -1226,8 +1226,8 @@ def forecast_mpc_test(mini_dpin1,
                                    'c2': c2s,
                                    'c3': c3s,
                                    'c4': c4s,
-                                   'forecast': (scale_factor *
-                                                forecast[:len(times)])})
+                                   'forecast': np.clip(scale_factor *
+                                                forecast[:len(times)],0,100)})
                 df.to_csv(file_path)
             elif ind1 == len(d_traj) - 1:
                 df = pd.DataFrame({'time': times,
