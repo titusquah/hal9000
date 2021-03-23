@@ -19,7 +19,7 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 tlb = 30  # °C
-a1 = [1.5, 2, 2.5, 3]
+a1 = [1.25, 1.5, 2, 2.5, 3]
 a2 = np.arange(3)
 trials = np.array(list(itertools.product(*[a1, a2])))
 np.random.shuffle(trials)
