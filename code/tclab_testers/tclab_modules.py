@@ -1115,7 +1115,9 @@ def forecast_mpc_test(mini_dpin1,
         apm_model.options.COLDSTART = 1
         apm_model.options.AUTO_COLD = 1
 
-    print("Starting Perfect MPC with T_lb =  {0} °C".format(temp_lb))
+    print("Starting Forecast MPC scale{0} with T_lb =  {1} °C".format(
+            scale_factor,
+            temp_lb))
 
     mini_dpin1.write(0)
     mini_heater_board.Q1(0)

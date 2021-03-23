@@ -51,8 +51,8 @@ for trial in trials:
                                                                    tol,
                                                                    hold_time)
     init_temp = temps1[-1]
-    forecast = tcm.get_forecast(trial[1])
-    d_traj = tcm.get_d_traj(trial[1])
+    forecast = tcm.get_forecast(int(trial[1]))
+    d_traj = tcm.get_d_traj(int(trial[1]))
     try:
         test(dpin1,
              heater_board,
