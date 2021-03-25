@@ -4,7 +4,7 @@ import numpy as np
 
 # for i in range(1, 4):
 
-file_path = "/data/real_forecast_scale_2.0_test_case_2.0(1).csv"
+file_path = "/data/real_forecast_scale_5.0_test_case_2.0(2).csv"
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
     content = f.readlines()
