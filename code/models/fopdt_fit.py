@@ -12,7 +12,7 @@ font = {'family': 'DejaVu Sans',
 matplotlib.rc('font', **font)
 
 # Import CSV data file
-file_path = "/data/step_test_no_fan_50(2).csv"
+file_path = "/data/heater_100_100_fan_0.2_1.0.csv"
 
 folder_path_txt = "../hidden/box_folder_path.txt"
 with open(folder_path_txt) as f:
@@ -21,9 +21,10 @@ content = [x.strip() for x in content]
 box_folder_path = content[0]
 
 data = pd.read_csv(box_folder_path + file_path)
-t = data['time'].values - data['time'].values[0]
-u = data['heater_pwm'].values
-yp = data['temp'].values
+data = data
+t = data['time'].values[327:] - data['time'].values[327]
+u = data['fan_pwm'].values[327:]
+yp = data['temp'].values[327:]
 u0 = u[0]
 yp0 = yp[0]
 
@@ -89,21 +90,21 @@ def objective(x):
 
 # initial guesses
 x0 = np.zeros(3)
-x0[0] = 1.0758313073767947  # Km
-x0[1] = 312.2249176059667  # taum
+x0[0] = -25.78  # Km
+x0[1] = 60.0  # taum
 x0[2] = 0.0  # thetam
 
 x = x0
 # # show initial objective
-# print('Initial SSE Objective: ' + str(objective(x0)))
-#
+print('Initial SSE Objective: ' + str(objective(x0)))
+# #
 # # optimize Km, taum, thetam
-# # solution = minimize(objective, x0)
+# solution = minimize(objective, x0)
 #
-# # Another way to solve: with bounds on variables
-# bnds = ((0, 20), (0, 500), (0.0, 30.0))
-# solution = minimize(objective, x0, bounds=bnds, method='L-BFGS-B')
-# x = solution.x
+# # # Another way to solve: with bounds on variables
+bnds = ((-50, 0), (0.01, 100), (0.0, 30.0))
+solution = minimize(objective, x0, bounds=bnds, method='L-BFGS-B')
+x = solution.x
 
 # show final objective
 print('Final SSE Objective: ' + str(objective(x)))

@@ -19,19 +19,15 @@ dpin1 = fan_board.get_pin(pntxt2)
 dpin1.mode = 3
 
 tlb = 30  # °C
-a1 = [0]
-a2 = np.arange(3)
-trials = np.array(list(itertools.product(*[a1, a2])))
-np.random.shuffle(trials)
+trials = [0,1]
 for trial in trials:
-    if trial[0] == 0:
+    if trial == 0:
         test = tcm.nominal_mpc_test
         test_name = 'nominal'
     else:
         test = tcm.perfect_mpc_test
         test_name = 'perfect'
-    file_path = "/data/real_{0}_test_case_{1}(6).csv".format(test_name,
-                                                          trial[1] + 1)
+    file_path = "/data/real_{0}_test_step(12).csv".format(test_name)
     folder_path_txt = "../hidden/box_folder_path.txt"
     with open(folder_path_txt) as f:
         content = f.readlines()
@@ -39,28 +35,13 @@ for trial in trials:
     box_folder_path = content[0]
     total_file_path = box_folder_path + file_path
     
-#    try:
-#        test(dpin1,
-#             heater_board,
-#             tlb,
-#             d_traj,
-#             amb_temp,
-#             init_temp,
-#             file_path=None,
-#             dt=1,
-#             look_back=11,
-#             look_forward=51,
-#             )
-#    except:
-#        break
-
     temp_sp = None
     times1, temps1, heater_pwms1, fan_pwms1 = tcm.fan_cooling(dpin1,
                                                               heater_board,
                                                               temp_sp=None)
-
+    
     amb_temp = min(temps1)
-
+    
     temp_sp = tlb + 3
     tol = 0.2
     hold_time = 20
@@ -70,7 +51,21 @@ for trial in trials:
                                                                    tol,
                                                                    hold_time)
     init_temp = temps1[-1]
-    d_traj = tcm.get_d_traj(trial[1])
+    n_steps = 3600
+    step_20 = np.ones(60) * 20
+    step_100 = np.ones(60) * 100
+    hi = np.array([20])
+    mini_list = [hi]
+    counter = 1
+    ind1 = 0
+    while counter < n_steps:
+        if ind1 % 2 == 0:
+            mini_list.append(step_20)
+        else:
+            mini_list.append(step_100)
+        ind1 += 1
+        counter += 60
+    d_traj = np.concatenate(mini_list)
     try:
         test(dpin1,
              heater_board,
@@ -88,7 +83,7 @@ for trial in trials:
              c4=0.09,
              )
     except:
-        break
-tcm.fan_cooling(dpin1,heater_board,temp_sp=None)
+        pass
+tcm.fan_cooling(dpin1, heater_board, temp_sp=None)
 heater_board.close()
 fan_board.exit()
