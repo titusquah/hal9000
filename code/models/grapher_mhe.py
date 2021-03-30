@@ -27,8 +27,8 @@ ax[0].plot(df.time[mini_start:mini_stop],
 ax[0].plot(df.time[mini_start:mini_stop],
            df.est_temp[mini_start:mini_stop],
            'r-', label=r'Predicted $T_c$', linewidth=4)
-ax[0].legend(loc='upper left', bbox_to_anchor=(1.01, 1),
-             fancybox=True, shadow=True, ncol=1)
+# ax[0].legend(loc='upper left', bbox_to_anchor=(1.01, 1),
+#              fancybox=True, shadow=True, ncol=1)
 ax[0].set_ylabel('$T_c$ (°C)')
 ax[1].plot(df.time[mini_start:mini_stop],
            df.c1[mini_start:mini_stop], 'g-', label='$C_1$',
@@ -42,12 +42,13 @@ ax[1].plot(df.time[mini_start:mini_stop],
 ax[1].plot(df.time[mini_start:mini_stop],
            df.c4[mini_start:mini_stop], 'k:', label='$C_4$',
            linewidth=4)
-ax[1].legend(loc='upper left', bbox_to_anchor=(1.01, 1),
-             fancybox=True, shadow=True, ncol=2)
+# ax[1].legend(loc='upper left', bbox_to_anchor=(1.01, 1),
+#              fancybox=True, shadow=True, ncol=2)
 ax[1].set_ylabel('Parameter Value')
 ax[1].set_xlabel('Time (s)')
 plt.tight_layout()
 # fig.savefig('mhe_fit5.eps', format='eps')
+fig.savefig('mhe_fit5.png')
 plt.show()
 
 ss_resid = np.sum((df.temp[mini_start + 133:mini_stop].values

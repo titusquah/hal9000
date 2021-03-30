@@ -6,6 +6,11 @@ import pandas as pd
 import tclab_modules as tcm
 import matplotlib.pyplot as plt
 import itertools
+import matplotlib
+
+font = {'family': 'DejaVu Sans',
+        'weight': 'bold',
+        'size': 36}
 
 # Connect to Arduino
 heater_board = TCLab(port='4')
