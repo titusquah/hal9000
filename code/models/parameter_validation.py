@@ -6,7 +6,7 @@ import matplotlib
 
 font = {'family': 'DejaVu Sans',
         'weight': 'bold',
-        'size': 16}
+        'size': 32}
 matplotlib.rc('font', **font)
 matplotlib.use('Qt5Agg')
 
@@ -21,7 +21,7 @@ box_folder_path = content[0]
 file_path = "/data/test4_big_fan.csv"
 df = pd.read_csv(box_folder_path + file_path)
 
-start = 6000
+start = 0
 stop = start + 6001
 # start = 0
 # stop = len(df)
@@ -81,25 +81,30 @@ while not done:
     ind1 += 1
 states = np.array(states)
 t = df.time[start:stop]
-# fig, ax = plt.subplots(3, figsize=(12, 8))
-#
-# ax[0].plot(t, df.temp.values[start:stop],
-#            'bo', linewidth=3, label=r'Measured $T_{c}$')
-# ax[0].plot(t, states[:, 0], 'r-', linewidth=3, label=r'Predicted $T_c$')
-# # ax[1].plot(t, states[:, 1], 'r--', linewidth=3, label=r'$T_h$')
-# ax[0].set_ylabel(r'Temperature (°C)')
+fig, ax = plt.subplots(3, figsize=(19, 10))
+
+ax[0].plot(t, df.temp.values[start:stop],
+           'bo', linewidth=3, label=r'Measured $T_{c}$')
+ax[0].plot(t, states[:, 0], 'r-', linewidth=3, label=r'Predicted $T_c$')
+# ax[1].plot(t, states[:, 1], 'r--', linewidth=3, label=r'$T_h$')
+ax[0].set_ylabel(r'$T_c$ (°C)')
+ax[0].legend(loc='upper left', bbox_to_anchor=(1.01, 1),
+                     fancybox=True, shadow=True, ncol=1)
 # ax[0].legend(loc='best')
-#
-# ax[1].plot(t, actions, 'r-', linewidth=3)
-#
-# ax[1].set_ylabel('Heater PWM %')
-# # ax[2].plot(t, dists, 'b-', linewidth=3, label=r'Fan',
-# #            alpha=0.5)
-# ax[2].plot(t, d_traj, 'b-', linewidth=3, alpha=1)
-# ax[2].set_ylabel('Fan PWM %')
-# ax[2].set_xlabel('Time (s)')
+
+ax[1].plot(t, actions, 'r-', linewidth=3)
+
+ax[1].set_ylabel('Heater PWM %')
+# ax[2].plot(t, dists, 'b-', linewidth=3, label=r'Fan',
+#            alpha=0.5)
+ax[2].plot(t, d_traj, 'b-', linewidth=3, alpha=1)
+ax[2].set_ylabel('Fan PWM %')
+ax[2].set_xlabel('Time (s)')
 # ax[2].legend(loc='best')
 plt.tight_layout()
+fig.savefig(r'model_fitting1_w_legend(1).png')
+fig.savefig(r'model_fitting1_w_legend(1).eps',
+            format='eps')
 plt.show()
 ss_resid = np.sum((df.temp.values[start:stop] - states[:, 0]) ** 2)
 ss_total = np.sum((df.temp.values[start:stop]
