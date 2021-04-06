@@ -1363,7 +1363,7 @@ def general_mhe_mpc_test(mini_dpin1,
         else:
             apm_model.Obj(
                 apm_model.integral(
-                    apm_model.heater_pwm**2 + penalty_scale * apm_model.log(
+                    (apm_model.heater_pwm/10)**2 + penalty_scale * apm_model.log(
                         1 + apm_model.exp(steepness
                                           * (temp_lb
                                              - apm_model.temp_sensor)))
@@ -1465,12 +1465,12 @@ def general_mhe_mpc_test(mini_dpin1,
                                          * forecast[
                                            ind1 + 1:ind1 + look_forward]])
         mpc.fan_pwm.VALUE = np.clip(prediction, 0, 100)
-        mpc.c1.MEAS = c1s[-1]
-        mpc.c2.MEAS = c2s[-1]
-        mpc.c3.MEAS = c3s[-1]
-        mpc.c4.MEAS = c4s[-1]
+#        mpc.c1.MEAS = c1s[-1]
+#        mpc.c2.MEAS = c2s[-1]
+#        mpc.c3.MEAS = c3s[-1]
+#        mpc.c4.MEAS = c4s[-1]
         try:
-            mpc.solve(disp=False)
+            mpc.solve(disp=True)
             if mpc.options.APPSTATUS == 1:
                 # Retrieve new values
                 action = mpc.heater_pwm.NEWVAL / 100
